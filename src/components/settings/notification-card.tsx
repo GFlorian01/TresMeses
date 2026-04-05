@@ -49,48 +49,48 @@ function TimePicker({
   }
 
   return (
-    <div className="flex items-center gap-1 bg-muted/40 border rounded-xl px-3 py-1">
+    <div className="flex items-center gap-1 bg-muted/40 border rounded-xl px-2 py-1">
       {/* Horas */}
       <div className="flex flex-col items-center">
         <button
           type="button"
           onClick={() => adjustHour(1)}
-          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-2 text-muted-foreground hover:text-foreground active:text-primary transition-colors touch-manipulation"
         >
-          <ChevronUp className="h-3.5 w-3.5" />
+          <ChevronUp className="h-4 w-4" />
         </button>
-        <span className="text-base font-mono font-semibold tabular-nums w-6 text-center leading-none py-1">
+        <span className="text-base font-mono font-semibold tabular-nums w-7 text-center leading-none">
           {String(h).padStart(2, "0")}
         </span>
         <button
           type="button"
           onClick={() => adjustHour(-1)}
-          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-2 text-muted-foreground hover:text-foreground active:text-primary transition-colors touch-manipulation"
         >
-          <ChevronDown className="h-3.5 w-3.5" />
+          <ChevronDown className="h-4 w-4" />
         </button>
       </div>
 
-      <span className="text-base font-mono font-semibold text-muted-foreground pb-0.5">:</span>
+      <span className="text-base font-mono font-semibold text-muted-foreground">:</span>
 
       {/* Minutos */}
       <div className="flex flex-col items-center">
         <button
           type="button"
           onClick={() => adjustMinute(5)}
-          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-2 text-muted-foreground hover:text-foreground active:text-primary transition-colors touch-manipulation"
         >
-          <ChevronUp className="h-3.5 w-3.5" />
+          <ChevronUp className="h-4 w-4" />
         </button>
-        <span className="text-base font-mono font-semibold tabular-nums w-6 text-center leading-none py-1">
+        <span className="text-base font-mono font-semibold tabular-nums w-7 text-center leading-none">
           {String(m).padStart(2, "0")}
         </span>
         <button
           type="button"
           onClick={() => adjustMinute(-5)}
-          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-2 text-muted-foreground hover:text-foreground active:text-primary transition-colors touch-manipulation"
         >
-          <ChevronDown className="h-3.5 w-3.5" />
+          <ChevronDown className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -288,17 +288,20 @@ export function NotificationCard() {
         )}
 
         {/* Agregar nuevo horario */}
-        <div className="flex items-center gap-2">
-          <TimePicker value={newTime} onChange={setNewTime} />
-          <Input
-            type="text"
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="Etiqueta"
-            className="flex-1"
-          />
-          <Button size="icon" variant="outline" onClick={addPref}>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <TimePicker value={newTime} onChange={setNewTime} />
+            <Input
+              type="text"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder="Etiqueta (ej: Rutina matutina)"
+              className="flex-1 min-w-0"
+            />
+          </div>
+          <Button variant="outline" className="w-full h-10 gap-2" onClick={addPref}>
             <Plus className="h-4 w-4" />
+            Agregar horario
           </Button>
         </div>
 
