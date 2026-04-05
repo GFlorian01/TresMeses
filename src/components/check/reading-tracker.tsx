@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Minus, Plus } from "lucide-react";
-import { updateReadingMinutes } from "@/app/(app)/check/actions";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 export function ReadingTracker({
@@ -14,15 +14,21 @@ export function ReadingTracker({
   entryId: string;
   initialMinutes: number;
 }) {
-  const [isPending, startTransition] = useTransition();
   const [minutes, setMinutes] = useState(initialMinutes);
+  const supabase = createClient();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleChange = (newMinutes: number) => {
     const clamped = Math.max(0, newMinutes);
     setMinutes(clamped);
-    startTransition(() => {
-      updateReadingMinutes(entryId, clamped);
-    });
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      supabase
+        .from("daily_entries")
+        .update({ reading_minutes: clamped })
+        .eq("id", entryId)
+        .then();
+    }, 300);
   };
 
   return (
@@ -51,7 +57,7 @@ export function ReadingTracker({
               variant="outline"
               size="icon"
               className="h-9 w-9 rounded-full"
-              disabled={isPending || minutes <= 0}
+              disabled={minutes <= 0}
               onClick={() => handleChange(minutes - 5)}
             >
               <Minus className="h-3.5 w-3.5" />
@@ -60,7 +66,6 @@ export function ReadingTracker({
               variant="outline"
               size="icon"
               className="h-9 w-9 rounded-full"
-              disabled={isPending}
               onClick={() => handleChange(minutes + 5)}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -69,7 +74,6 @@ export function ReadingTracker({
               variant="outline"
               size="icon"
               className="h-9 w-9 rounded-full"
-              disabled={isPending}
               onClick={() => handleChange(minutes + 15)}
             >
               <span className="text-xs font-medium">+15</span>

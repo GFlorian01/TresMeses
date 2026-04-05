@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition, useOptimistic } from "react";
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { toggleHabit } from "@/app/(app)/check/actions";
+import { createClient } from "@/lib/supabase/client";
 import { ListChecks } from "lucide-react";
 
 interface HabitCheckItem {
@@ -17,17 +17,24 @@ interface HabitCheckItem {
   };
 }
 
-export function HabitChecklist({ checks }: { checks: HabitCheckItem[] }) {
-  const [isPending, startTransition] = useTransition();
-  const [optimisticChecks, setOptimistic] = useOptimistic(
-    checks,
-    (state, { id, completed }: { id: string; completed: boolean }) =>
-      state.map((c) => (c.id === id ? { ...c, completed } : c))
-  );
+export function HabitChecklist({
+  checks: initialChecks,
+}: {
+  checks: HabitCheckItem[];
+}) {
+  const [checks, setChecks] = useState(initialChecks);
+  const supabase = createClient();
 
-  const completedCount = optimisticChecks.filter((c) => c.completed).length;
-  const total = optimisticChecks.length;
+  const completedCount = checks.filter((c) => c.completed).length;
+  const total = checks.length;
   const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+  const toggle = (id: string, completed: boolean) => {
+    setChecks((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, completed } : c))
+    );
+    supabase.from("habit_checks").update({ completed }).eq("id", id).then();
+  };
 
   return (
     <Card className="card-hover">
@@ -44,24 +51,19 @@ export function HabitChecklist({ checks }: { checks: HabitCheckItem[] }) {
         <Progress value={percent} className="h-1.5 mt-2" />
       </CardHeader>
       <CardContent className="space-y-1">
-        {optimisticChecks.map((check) => (
+        {checks.map((check) => (
           <label
             key={check.id}
-            className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/50"
+            className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/50 active:bg-accent/70"
           >
             <Checkbox
               checked={check.completed}
-              disabled={isPending}
-              onCheckedChange={(checked) => {
-                const val = checked === true;
-                startTransition(() => {
-                  setOptimistic({ id: check.id, completed: val });
-                  toggleHabit(check.id, val);
-                });
-              }}
+              onCheckedChange={(checked) =>
+                toggle(check.id, checked === true)
+              }
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
-            <span className="text-sm flex items-center gap-2">
+            <span className="text-sm flex items-center gap-2 select-none">
               {check.habit.icon && (
                 <span className="text-base">{check.habit.icon}</span>
               )}

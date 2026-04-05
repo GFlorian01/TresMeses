@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition, useState, useOptimistic } from "react";
+import { useState, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { updateMeal } from "@/app/(app)/check/actions";
+import { createClient } from "@/lib/supabase/client";
 import { UtensilsCrossed } from "lucide-react";
 import type { MealType } from "@/types/database";
 
@@ -22,24 +22,45 @@ const mealLabels: Record<MealType, { label: string; icon: string }> = {
   SNACK: { label: "Snack", icon: "🍎" },
 };
 
-export function MealTracker({ meals }: { meals: MealItem[] }) {
-  const [isPending, startTransition] = useTransition();
-  const [optimisticMeals, setOptimistic] = useOptimistic(
-    meals,
-    (state, { id, completed }: { id: string; completed: boolean }) =>
-      state.map((m) => (m.id === id ? { ...m, completed } : m))
-  );
+export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
+  const [meals, setMeals] = useState(initialMeals);
   const [descriptions, setDescriptions] = useState<Record<string, string>>(
     () => {
       const map: Record<string, string> = {};
-      meals.forEach((m) => {
+      initialMeals.forEach((m) => {
         map[m.id] = m.description ?? "";
       });
       return map;
     }
   );
+  const supabase = createClient();
+  const debounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const completedCount = optimisticMeals.filter((m) => m.completed).length;
+  const completedCount = meals.filter((m) => m.completed).length;
+
+  const toggleMeal = (id: string, completed: boolean) => {
+    setMeals((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, completed } : m))
+    );
+    supabase
+      .from("meal_entries")
+      .update({ completed })
+      .eq("id", id)
+      .then();
+  };
+
+  const updateDescription = (id: string, value: string) => {
+    setDescriptions((prev) => ({ ...prev, [id]: value }));
+    // Debounce the DB update
+    if (debounceRef.current[id]) clearTimeout(debounceRef.current[id]);
+    debounceRef.current[id] = setTimeout(() => {
+      supabase
+        .from("meal_entries")
+        .update({ description: value })
+        .eq("id", id)
+        .then();
+    }, 800);
+  };
 
   return (
     <Card className="card-hover">
@@ -50,29 +71,24 @@ export function MealTracker({ meals }: { meals: MealItem[] }) {
             Comidas
           </span>
           <span className="text-xs font-normal text-muted-foreground tabular-nums">
-            {completedCount}/{optimisticMeals.length}
+            {completedCount}/{meals.length}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1">
-        {optimisticMeals.map((meal) => {
+        {meals.map((meal) => {
           const info = mealLabels[meal.meal_type];
           return (
             <div key={meal.id}>
-              <label className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/50">
+              <label className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/50 active:bg-accent/70">
                 <Checkbox
                   checked={meal.completed}
-                  disabled={isPending}
-                  onCheckedChange={(checked) => {
-                    const val = checked === true;
-                    startTransition(() => {
-                      setOptimistic({ id: meal.id, completed: val });
-                      updateMeal(meal.id, val, descriptions[meal.id]);
-                    });
-                  }}
+                  onCheckedChange={(checked) =>
+                    toggleMeal(meal.id, checked === true)
+                  }
                   className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <span className="text-sm flex items-center gap-2">
+                <span className="text-sm flex items-center gap-2 select-none">
                   <span className="text-base">{info.icon}</span>
                   <span
                     className={
@@ -91,17 +107,9 @@ export function MealTracker({ meals }: { meals: MealItem[] }) {
                     placeholder="¿Que comiste? (opcional)"
                     value={descriptions[meal.id] ?? ""}
                     className="text-xs h-8 bg-accent/30 border-0 focus-visible:ring-1"
-                    onChange={(e) => {
-                      setDescriptions((prev) => ({
-                        ...prev,
-                        [meal.id]: e.target.value,
-                      }));
-                    }}
-                    onBlur={() => {
-                      startTransition(() => {
-                        updateMeal(meal.id, true, descriptions[meal.id]);
-                      });
-                    }}
+                    onChange={(e) =>
+                      updateDescription(meal.id, e.target.value)
+                    }
                   />
                 </div>
               )}
