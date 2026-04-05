@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(npx prisma:*)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add card checkbox input textarea label separator badge progress tabs sheet dialog)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(git add:*)"
     ]
   }
 }
