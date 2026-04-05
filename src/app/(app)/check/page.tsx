@@ -11,14 +11,35 @@ import { CalendarDays } from "lucide-react";
 
 export default async function CheckPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    redirect("/login");
+  }
 
   if (!user) redirect("/login");
 
   const today = new Date().toISOString().split("T")[0];
-  const entry = await getOrCreateDailyEntry(user.id, today);
+
+  let entry;
+  try {
+    entry = await getOrCreateDailyEntry(user.id, today);
+  } catch {
+    // If DB operations fail, show a minimal page
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <div className="max-w-lg mx-auto p-4">
+          <h1 className="text-xl font-bold pt-2">Check diario</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Error al cargar datos. Ve a Config para crear tu ciclo y habitos.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!entry) redirect("/login");
 
@@ -28,7 +49,6 @@ export default async function CheckPage() {
     { locale: es }
   );
 
-  // Calculate today's completion
   const habitsDone =
     entry.habit_checks?.filter((h: { completed: boolean }) => h.completed)
       .length ?? 0;

@@ -9,7 +9,12 @@
       "Bash(npm run:*)",
       "Bash(kill %1)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

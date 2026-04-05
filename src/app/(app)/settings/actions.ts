@@ -83,6 +83,20 @@ export async function toggleHabitActive(habitId: string, isActive: boolean) {
   revalidatePath("/settings");
 }
 
+export async function updateNameAction(name: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await supabase.auth.updateUser({ data: { full_name: name } });
+  await supabase.from("users").update({ name }).eq("id", user.id);
+
+  revalidatePath("/settings");
+  revalidatePath("/check");
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

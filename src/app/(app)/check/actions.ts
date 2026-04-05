@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function toggleHabit(checkId: string, completed: boolean) {
@@ -9,8 +8,6 @@ export async function toggleHabit(checkId: string, completed: boolean) {
     .from("habit_checks")
     .update({ completed })
     .eq("id", checkId);
-
-  revalidatePath("/check");
 }
 
 export async function updateMeal(
@@ -23,8 +20,6 @@ export async function updateMeal(
     .from("meal_entries")
     .update({ completed, ...(description !== undefined && { description }) })
     .eq("id", entryId);
-
-  revalidatePath("/check");
 }
 
 export async function updateReadingMinutes(entryId: string, minutes: number) {
@@ -33,8 +28,6 @@ export async function updateReadingMinutes(entryId: string, minutes: number) {
     .from("daily_entries")
     .update({ reading_minutes: minutes })
     .eq("id", entryId);
-
-  revalidatePath("/check");
 }
 
 export async function toggleGymDay(
@@ -47,8 +40,6 @@ export async function toggleGymDay(
     .from("daily_entries")
     .update({ is_gym_day: isGym, is_recovery_day: isRecovery })
     .eq("id", entryId);
-
-  revalidatePath("/check");
 }
 
 export async function updateNotes(entryId: string, notes: string) {
@@ -57,6 +48,4 @@ export async function updateNotes(entryId: string, notes: string) {
     .from("daily_entries")
     .update({ notes })
     .eq("id", entryId);
-
-  revalidatePath("/check");
 }
