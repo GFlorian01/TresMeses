@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, BellOff, Plus, Trash2, Loader2 } from "lucide-react";
+import { Bell, BellOff, Plus, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,75 @@ function urlBase64ToUint8Array(base64String: string) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+// Custom time picker con flechas arriba/abajo
+function TimePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [h, m] = value.split(":").map(Number);
+
+  function adjustHour(delta: number) {
+    const next = ((h + delta + 24) % 24).toString().padStart(2, "0");
+    onChange(`${next}:${String(m).padStart(2, "0")}`);
+  }
+
+  function adjustMinute(delta: number) {
+    const next = ((m + delta + 60) % 60).toString().padStart(2, "0");
+    onChange(`${String(h).padStart(2, "0")}:${next}`);
+  }
+
+  return (
+    <div className="flex items-center gap-1 bg-muted/40 border rounded-xl px-3 py-1">
+      {/* Horas */}
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => adjustHour(1)}
+          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-base font-mono font-semibold tabular-nums w-6 text-center leading-none py-1">
+          {String(h).padStart(2, "0")}
+        </span>
+        <button
+          type="button"
+          onClick={() => adjustHour(-1)}
+          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <span className="text-base font-mono font-semibold text-muted-foreground pb-0.5">:</span>
+
+      {/* Minutos */}
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => adjustMinute(5)}
+          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-base font-mono font-semibold tabular-nums w-6 text-center leading-none py-1">
+          {String(m).padStart(2, "0")}
+        </span>
+        <button
+          type="button"
+          onClick={() => adjustMinute(-5)}
+          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function NotificationCard() {
@@ -56,8 +125,9 @@ export function NotificationCard() {
 
   async function checkPushState() {
     if (!("Notification" in window)) return;
-    setPermissionState(Notification.permission as "default" | "granted" | "denied");
-
+    setPermissionState(
+      Notification.permission as "default" | "granted" | "denied"
+    );
     if ("serviceWorker" in navigator) {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
@@ -70,9 +140,7 @@ export function NotificationCard() {
       alert("Tu navegador no soporta notificaciones push");
       return;
     }
-
     if (pushEnabled) {
-      // Unsubscribe
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
@@ -85,31 +153,35 @@ export function NotificationCard() {
       }
       setPushEnabled(false);
     } else {
-      // Request permission & subscribe
       const permission = await Notification.requestPermission();
       setPermissionState(permission as "default" | "granted" | "denied");
       if (permission !== "granted") return;
-
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
-
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
-
       setPushEnabled(true);
     }
   }
 
   async function addPref() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Ensure seconds are included for DB time type
+    const timeWithSeconds = newTime.length === 5 ? `${newTime}:00` : newTime;
+
     const { data, error } = await supabase
       .from("notification_preferences")
-      .insert({ label: newLabel, time: newTime, user_id: (await supabase.auth.getUser()).data.user?.id })
+      .insert({ label: newLabel, time: timeWithSeconds, user_id: user.id })
       .select()
       .single();
 
@@ -182,22 +254,22 @@ export function NotificationCard() {
           </p>
         )}
 
-        {/* Existing preferences */}
+        {/* Horarios existentes */}
         {prefs.length > 0 && (
           <div className="space-y-2">
             {prefs.map((pref) => (
               <div
                 key={pref.id}
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border transition-opacity",
-                  !pref.enabled && "opacity-50"
+                  "flex items-center gap-3 px-3 py-2 rounded-xl border transition-opacity",
+                  !pref.enabled && "opacity-40"
                 )}
               >
                 <button
                   className="flex-1 text-left flex items-center gap-3"
                   onClick={() => togglePref(pref.id, !pref.enabled)}
                 >
-                  <span className="text-sm font-mono font-medium tabular-nums">
+                  <span className="text-sm font-mono font-bold tabular-nums text-primary">
                     {pref.time.slice(0, 5)}
                   </span>
                   <span className="text-sm text-muted-foreground truncate">
@@ -215,14 +287,9 @@ export function NotificationCard() {
           </div>
         )}
 
-        {/* Add new preference */}
-        <div className="flex gap-2">
-          <Input
-            type="time"
-            value={newTime}
-            onChange={(e) => setNewTime(e.target.value)}
-            className="w-28 font-mono"
-          />
+        {/* Agregar nuevo horario */}
+        <div className="flex items-center gap-2">
+          <TimePicker value={newTime} onChange={setNewTime} />
           <Input
             type="text"
             value={newLabel}
@@ -236,8 +303,7 @@ export function NotificationCard() {
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Recibiras una notificacion push en los horarios configurados. Asegurate
-          de tener las notificaciones activadas en tu dispositivo.
+          Toca el horario para activar/desactivar. Los minutos cambian de 5 en 5.
         </p>
       </CardContent>
     </Card>
