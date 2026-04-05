@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { signOutAction } from "./actions";
 import { Settings, LogOut } from "lucide-react";
+import { NotificationCard } from "@/components/settings/notification-card";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -37,6 +38,7 @@ export default async function SettingsPage() {
           email={user.email ?? ""}
         />
 
+        <NotificationCard />
         <CycleForm activeCycle={activeCycle} />
         <HabitManager habits={allHabits ?? []} />
 

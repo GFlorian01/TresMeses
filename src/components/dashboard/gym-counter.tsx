@@ -14,7 +14,7 @@ export function GymCounter({ sessions }: { sessions: number }) {
           "absolute top-0 left-0 right-0 h-1",
           onTrack
             ? "bg-gradient-to-r from-green-500 to-emerald-400"
-            : "bg-gradient-to-r from-blue-500 to-cyan-400"
+            : "bg-gradient-to-r from-red-500 to-orange-400"
         )}
       />
       <CardContent className="pt-5 pb-4">
@@ -25,13 +25,13 @@ export function GymCounter({ sessions }: { sessions: number }) {
           <div
             className={cn(
               "p-2 rounded-full",
-              onTrack ? "bg-green-500/10" : "bg-blue-500/10"
+              onTrack ? "bg-green-500/10" : "bg-red-500/10"
             )}
           >
             <Dumbbell
               className={cn(
                 "h-4 w-4",
-                onTrack ? "text-green-500" : "text-blue-500"
+                onTrack ? "text-green-500" : "text-red-500"
               )}
             />
           </div>
@@ -47,7 +47,7 @@ export function GymCounter({ sessions }: { sessions: number }) {
                 i < sessions
                   ? onTrack
                     ? "bg-green-500"
-                    : "bg-blue-500"
+                    : "bg-red-500"
                   : "bg-muted"
               )}
             />

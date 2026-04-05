@@ -1,0 +1,21 @@
+{
+  "name": "TresMeses",
+  "short_name": "TresMeses",
+  "description": "Tu sistema de 12 semanas para lograr tus metas",
+  "start_url": "/check",
+  "display": "standalone",
+  "background_color": "#0a0b14",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
