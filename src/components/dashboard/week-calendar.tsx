@@ -20,12 +20,13 @@ function getScoreColor(score: number) {
 export function WeekCalendar({
   entries,
   weekStart,
+  today,
 }: {
   entries: EntryWithRelations[];
   weekStart: string;
+  today: string;
 }) {
   const start = new Date(weekStart);
-  const today = new Date().toISOString().split("T")[0];
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);

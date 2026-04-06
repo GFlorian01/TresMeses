@@ -8,6 +8,7 @@ import { GymToggle } from "@/components/check/gym-toggle";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
+import { getTodayStr, parseDateSafe, DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export default async function CheckPage() {
   const supabase = await createClient();
@@ -22,7 +23,15 @@ export default async function CheckPage() {
 
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  // Obtener timezone del usuario (default Lima si no tiene)
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("timezone")
+    .eq("id", user.id)
+    .single();
+  const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
+
+  const today = getTodayStr(tz);
 
   let entry;
   try {
@@ -44,7 +53,7 @@ export default async function CheckPage() {
   if (!entry) redirect("/login");
 
   const formattedDate = format(
-    new Date(today + "T12:00:00"),
+    parseDateSafe(today),
     "EEEE d 'de' MMMM",
     { locale: es }
   );

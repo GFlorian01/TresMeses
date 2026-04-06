@@ -8,6 +8,8 @@ import { ProfileCard } from "@/components/settings/profile-card";
 import { signOutAction } from "./actions";
 import { Settings, LogOut } from "lucide-react";
 import { NotificationCard } from "@/components/settings/notification-card";
+import { TimezoneCard } from "@/components/settings/timezone-card";
+import { DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -18,6 +20,12 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
 
   const activeCycle = await getActiveCycle(user.id);
+
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("timezone")
+    .eq("id", user.id)
+    .single();
 
   const { data: allHabits } = await supabase
     .from("habits")
@@ -38,6 +46,7 @@ export default async function SettingsPage() {
           email={user.email ?? ""}
         />
 
+        <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />
         <NotificationCard />
         <CycleForm activeCycle={activeCycle} />
         <HabitManager habits={allHabits ?? []} />

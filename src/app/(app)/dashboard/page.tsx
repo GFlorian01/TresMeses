@@ -8,6 +8,7 @@ import {
   getGymSessionsLast2Weeks,
   getCurrentWeekStart,
 } from "@/lib/dashboard-queries";
+import { DEFAULT_TIMEZONE, getTodayStr } from "@/lib/date-utils";
 import { ScoreCard } from "@/components/dashboard/score-card";
 import { StreakCard } from "@/components/dashboard/streak-card";
 import { CycleProgress } from "@/components/dashboard/cycle-progress";
@@ -24,13 +25,20 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const weekStart = getCurrentWeekStart();
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("timezone")
+    .eq("id", user.id)
+    .single();
+  const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
+
+  const weekStart = getCurrentWeekStart(tz);
 
   const [weekEntries, streak, cycleProgress, gymSessions] = await Promise.all([
     getWeekData(user.id, weekStart),
-    getStreak(user.id),
-    getCycleProgress(user.id),
-    getGymSessionsLast2Weeks(user.id),
+    getStreak(user.id, tz),
+    getCycleProgress(user.id, tz),
+    getGymSessionsLast2Weeks(user.id, tz),
   ]);
 
   const weekScore = calculateWeekScore(weekEntries);
@@ -50,7 +58,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Calendario semanal */}
-        <WeekCalendar entries={weekEntries} weekStart={weekStart} />
+        <WeekCalendar entries={weekEntries} weekStart={weekStart} today={getTodayStr(tz)} />
 
         {/* Gym counter */}
         <GymCounter sessions={gymSessions} />

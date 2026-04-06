@@ -97,6 +97,19 @@ export async function updateNameAction(name: string) {
   revalidatePath("/check");
 }
 
+export async function updateTimezoneAction(timezone: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await supabase.from("users").update({ timezone }).eq("id", user.id);
+  revalidatePath("/settings");
+  revalidatePath("/check");
+  revalidatePath("/dashboard");
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

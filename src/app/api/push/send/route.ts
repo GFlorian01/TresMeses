@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
+import { getCurrentTimeStr, DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,16 @@ function getSupabaseAdmin() {
   );
 }
 
+/** Retorna true si timeStr está dentro de una ventana de 5 min desde currentTime */
+function isWithinWindow(currentTime: string, timeStr: string): boolean {
+  const [ch, cm] = currentTime.slice(0, 5).split(":").map(Number);
+  const [th, tm] = timeStr.slice(0, 5).split(":").map(Number);
+  const currentMins = ch * 60 + cm;
+  const targetMins = th * 60 + tm;
+  return targetMins >= currentMins && targetMins < currentMins + 5;
+}
+
 export async function GET(request: Request) {
-  // Verify cron secret to prevent unauthorized calls
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,77 +43,72 @@ export async function GET(request: Request) {
   ensureVapid();
   const supabase = getSupabaseAdmin();
 
-  // Get current time in user's timezone (we use America/Bogota as default)
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Bogota",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const currentTime = formatter.format(now);
-  // Format as HH:MM:00 for DB comparison
-  const [hours, minutes] = currentTime.split(":");
-  const timeStr = `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}:00`;
+  // Obtener todos los usuarios con sus zonas horarias y suscripciones push
+  const { data: users } = await supabase
+    .from("users")
+    .select("id, timezone");
 
-  // Find enabled preferences matching this time (within 5 min window)
-  const { data: prefs } = await supabase
-    .from("notification_preferences")
-    .select("user_id, label")
-    .eq("enabled", true)
-    .gte("time", timeStr)
-    .lte(
-      "time",
-      `${hours.padStart(2, "0")}:${String(Math.min(59, parseInt(minutes) + 4)).padStart(2, "0")}:00`
-    );
+  if (!users || users.length === 0) return NextResponse.json({ sent: 0 });
 
-  if (!prefs || prefs.length === 0) {
-    return NextResponse.json({ sent: 0 });
+  // Para cada usuario, calcular su hora local y ver si tiene notificaciones pendientes
+  const matchingUserIds: string[] = [];
+
+  for (const u of users) {
+    const tz = u.timezone ?? DEFAULT_TIMEZONE;
+    const localTime = getCurrentTimeStr(tz); // "HH:MM:SS"
+
+    // Buscar preferencias de este usuario que coincidan con la hora local
+    const { data: prefs } = await supabase
+      .from("notification_preferences")
+      .select("id, time, label")
+      .eq("user_id", u.id)
+      .eq("enabled", true);
+
+    const match = prefs?.some((p) => isWithinWindow(localTime, p.time));
+    if (match) matchingUserIds.push(u.id);
   }
 
-  const userIds = [...new Set(prefs.map((p) => p.user_id))];
+  if (matchingUserIds.length === 0) return NextResponse.json({ sent: 0 });
 
-  // Get push subscriptions for those users
+  // Obtener las suscripciones y preferencias de los usuarios que tienen notificación ahora
   const { data: subs } = await supabase
     .from("push_subscriptions")
     .select("*")
-    .in("user_id", userIds);
+    .in("user_id", matchingUserIds);
 
-  if (!subs || subs.length === 0) {
-    return NextResponse.json({ sent: 0 });
-  }
+  if (!subs || subs.length === 0) return NextResponse.json({ sent: 0 });
 
   let sent = 0;
   const stale: string[] = [];
 
   for (const sub of subs) {
-    const userPrefs = prefs.filter((p) => p.user_id === sub.user_id);
-    const label = userPrefs[0]?.label || "Recordatorio";
+    const tz = users.find((u) => u.id === sub.user_id)?.timezone ?? DEFAULT_TIMEZONE;
+    const localTime = getCurrentTimeStr(tz);
 
-    const payload = JSON.stringify({
-      title: "TresMeses",
-      body: label,
-      url: "/check",
-    });
+    const { data: prefs } = await supabase
+      .from("notification_preferences")
+      .select("label, time")
+      .eq("user_id", sub.user_id)
+      .eq("enabled", true);
+
+    const label =
+      prefs?.find((p) => isWithinWindow(localTime, p.time))?.label ??
+      "Es hora de registrar tu progreso";
+
+    const payload = JSON.stringify({ title: "TresMeses", body: label, url: "/check" });
 
     try {
       await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         payload
       );
       sent++;
     } catch (err: unknown) {
       const statusCode = (err as { statusCode?: number }).statusCode;
-      if (statusCode === 410 || statusCode === 404) {
-        stale.push(sub.endpoint);
-      }
+      if (statusCode === 410 || statusCode === 404) stale.push(sub.endpoint);
     }
   }
 
-  // Clean up stale subscriptions
   if (stale.length > 0) {
     await supabase.from("push_subscriptions").delete().in("endpoint", stale);
   }
