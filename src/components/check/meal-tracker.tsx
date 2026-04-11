@@ -22,12 +22,18 @@ const mealLabels: Record<MealType, { label: string; icon: string }> = {
   SNACK: { label: "Snack", icon: "🍎" },
 };
 
-export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
-  const [meals, setMeals] = useState(initialMeals);
+export function MealTracker({
+  meals,
+  onToggle,
+}: {
+  meals: MealItem[];
+  onToggle: (id: string, completed: boolean) => void;
+}) {
+  // Solo el estado de descripciones es local — los toggles suben al padre
   const [descriptions, setDescriptions] = useState<Record<string, string>>(
     () => {
       const map: Record<string, string> = {};
-      initialMeals.forEach((m) => {
+      meals.forEach((m) => {
         map[m.id] = m.description ?? "";
       });
       return map;
@@ -38,20 +44,8 @@ export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
 
   const completedCount = meals.filter((m) => m.completed).length;
 
-  const toggleMeal = (id: string, completed: boolean) => {
-    setMeals((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, completed } : m))
-    );
-    supabase
-      .from("meal_entries")
-      .update({ completed })
-      .eq("id", id)
-      .then();
-  };
-
   const updateDescription = (id: string, value: string) => {
     setDescriptions((prev) => ({ ...prev, [id]: value }));
-    // Debounce the DB update
     if (debounceRef.current[id]) clearTimeout(debounceRef.current[id]);
     debounceRef.current[id] = setTimeout(() => {
       supabase
@@ -84,7 +78,7 @@ export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
                 <Checkbox
                   checked={meal.completed}
                   onCheckedChange={(checked) =>
-                    toggleMeal(meal.id, checked === true)
+                    onToggle(meal.id, checked === true)
                   }
                   className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
@@ -92,9 +86,7 @@ export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
                   <span className="text-base">{info.icon}</span>
                   <span
                     className={
-                      meal.completed
-                        ? "line-through text-muted-foreground"
-                        : ""
+                      meal.completed ? "line-through text-muted-foreground" : ""
                     }
                   >
                     {info.label}
@@ -107,9 +99,7 @@ export function MealTracker({ meals: initialMeals }: { meals: MealItem[] }) {
                     placeholder="¿Que comiste? (opcional)"
                     value={descriptions[meal.id] ?? ""}
                     className="text-xs h-8 bg-accent/30 border-0 focus-visible:ring-1"
-                    onChange={(e) =>
-                      updateDescription(meal.id, e.target.value)
-                    }
+                    onChange={(e) => updateDescription(meal.id, e.target.value)}
                   />
                 </div>
               )}

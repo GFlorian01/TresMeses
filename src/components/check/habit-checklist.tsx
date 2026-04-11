@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { createClient } from "@/lib/supabase/client";
 import { ListChecks } from "lucide-react";
 
 interface HabitCheckItem {
@@ -18,23 +16,15 @@ interface HabitCheckItem {
 }
 
 export function HabitChecklist({
-  checks: initialChecks,
+  checks,
+  onToggle,
 }: {
   checks: HabitCheckItem[];
+  onToggle: (id: string, completed: boolean) => void;
 }) {
-  const [checks, setChecks] = useState(initialChecks);
-  const supabase = createClient();
-
   const completedCount = checks.filter((c) => c.completed).length;
   const total = checks.length;
   const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-
-  const toggle = (id: string, completed: boolean) => {
-    setChecks((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, completed } : c))
-    );
-    supabase.from("habit_checks").update({ completed }).eq("id", id).then();
-  };
 
   return (
     <Card className="card-hover">
@@ -59,7 +49,7 @@ export function HabitChecklist({
             <Checkbox
               checked={check.completed}
               onCheckedChange={(checked) =>
-                toggle(check.id, checked === true)
+                onToggle(check.id, checked === true)
               }
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
@@ -69,9 +59,7 @@ export function HabitChecklist({
               )}
               <span
                 className={
-                  check.completed
-                    ? "line-through text-muted-foreground"
-                    : ""
+                  check.completed ? "line-through text-muted-foreground" : ""
                 }
               >
                 {check.habit.name}
