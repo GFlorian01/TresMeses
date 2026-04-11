@@ -18,10 +18,12 @@ export function GymToggle({
   entryId,
   isGymDay,
   isRecoveryDay,
+  onTrainingChange,
 }: {
   entryId: string;
   isGymDay: boolean;
   isRecoveryDay: boolean;
+  onTrainingChange?: (hasTraining: boolean) => void;
 }) {
   const initial: TrainingType = isGymDay
     ? "gym"
@@ -33,6 +35,7 @@ export function GymToggle({
 
   const handleSelect = (type: TrainingType) => {
     setSelected(type);
+    onTrainingChange?.(type !== "none");
     supabase
       .from("daily_entries")
       .update({
