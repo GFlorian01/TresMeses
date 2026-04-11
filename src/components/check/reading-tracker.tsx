@@ -10,9 +10,11 @@ import { cn } from "@/lib/utils";
 export function ReadingTracker({
   entryId,
   initialMinutes,
+  onReadingChange,
 }: {
   entryId: string;
   initialMinutes: number;
+  onReadingChange?: (hasReading: boolean) => void;
 }) {
   const [minutes, setMinutes] = useState(initialMinutes);
   const supabase = createClient();
@@ -20,6 +22,7 @@ export function ReadingTracker({
 
   const handleChange = (newMinutes: number) => {
     const clamped = Math.max(0, newMinutes);
+    if ((minutes > 0) !== (clamped > 0)) onReadingChange?.(clamped > 0);
     setMinutes(clamped);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
