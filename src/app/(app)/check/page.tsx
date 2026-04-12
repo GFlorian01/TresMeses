@@ -19,16 +19,28 @@ export default async function CheckPage() {
 
   if (!user) redirect("/login");
 
-  // Obtener timezone y estado de onboarding
+  // Obtener timezone — query separada para no fallar si onboarding_complete no existe aún
   const { data: userRow } = await supabase
     .from("users")
     .select("timezone, onboarding_complete")
     .eq("id", user.id)
     .single();
 
-  if (!userRow?.onboarding_complete) redirect("/onboarding");
-
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
+
+  // Verificar onboarding: usar ciclo activo como fuente de verdad (no depende de la columna)
+  if (!userRow?.onboarding_complete) {
+    const { data: activeCycle } = await supabase
+      .from("cycles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    if (!activeCycle) redirect("/onboarding");
+    // Si tiene ciclo, continuar — onboarding_complete se fijará cuando la migración se aplique
+  }
   const today = getTodayStr(tz);
 
   let entry;

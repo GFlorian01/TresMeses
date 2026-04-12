@@ -17,7 +17,18 @@ export default async function OnboardingPage() {
     .eq("id", user.id)
     .single();
 
+  // Si tiene ciclo activo, onboarding ya fue completado
   if (userRow?.onboarding_complete) redirect("/check");
+  if (!userRow?.onboarding_complete) {
+    const { data: activeCycle } = await supabase
+      .from("cycles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+    if (activeCycle) redirect("/check");
+  }
 
   const { data: habits } = await supabase
     .from("habits")

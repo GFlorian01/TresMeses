@@ -15,10 +15,11 @@ export async function GET(request: Request) {
       // Sync user to our database
       await syncUser(data.user);
 
-      // Create default habits if first time
+      // Create default habits if first time, then redirect to onboarding
       const habits = await getHabits(data.user.id);
       if (habits.length === 0) {
         await createDefaultHabits(data.user.id);
+        return NextResponse.redirect(`${origin}/onboarding`);
       }
 
       return NextResponse.redirect(`${origin}${next}`);
