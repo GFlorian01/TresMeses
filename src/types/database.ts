@@ -19,6 +19,11 @@ export interface Cycle {
   end_date: string;
   goals: string[];
   is_active: boolean;
+  is_paused: boolean;
+  paused_at: string | null;
+  pause_reason: string | null;
+  total_paused_days: number;
+  restart_reason: string | null;
   created_at: string;
 }
 

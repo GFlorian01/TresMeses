@@ -110,6 +110,95 @@ export async function updateTimezoneAction(timezone: string) {
   revalidatePath("/dashboard");
 }
 
+export async function pauseCycleAction(reason: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("cycles")
+    .update({
+      is_paused: true,
+      paused_at: new Date().toISOString(),
+      pause_reason: reason,
+    })
+    .eq("user_id", user.id)
+    .eq("is_active", true);
+
+  if (error) throw error;
+  revalidatePath("/settings");
+  revalidatePath("/check");
+  revalidatePath("/dashboard");
+  revalidatePath("/review");
+}
+
+export async function resumeCycleAction() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: cycle } = await supabase
+    .from("cycles")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .eq("is_paused", true)
+    .single();
+
+  if (!cycle) throw new Error("No paused cycle found");
+
+  const pausedAt = new Date(cycle.paused_at);
+  const now = new Date();
+  const daysPaused = Math.ceil((now.getTime() - pausedAt.getTime()) / (1000 * 60 * 60 * 24));
+  const newTotalPausedDays = (cycle.total_paused_days ?? 0) + daysPaused;
+
+  const endDate = new Date(cycle.end_date + "T12:00:00");
+  endDate.setDate(endDate.getDate() + daysPaused);
+
+  const { error } = await supabase
+    .from("cycles")
+    .update({
+      is_paused: false,
+      paused_at: null,
+      total_paused_days: newTotalPausedDays,
+      end_date: endDate.toISOString().split("T")[0],
+    })
+    .eq("id", cycle.id);
+
+  if (error) throw error;
+  revalidatePath("/settings");
+  revalidatePath("/check");
+  revalidatePath("/dashboard");
+  revalidatePath("/review");
+}
+
+export async function restartCycleAction(reason: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await supabase
+    .from("cycles")
+    .update({
+      is_active: false,
+      is_paused: false,
+      restart_reason: reason,
+    })
+    .eq("user_id", user.id)
+    .eq("is_active", true);
+
+  revalidatePath("/settings");
+  revalidatePath("/check");
+  revalidatePath("/dashboard");
+  revalidatePath("/review");
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

@@ -27,13 +27,18 @@ model User {
 
 // ─── Ciclo de 12 semanas ───
 model Cycle {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  startDate DateTime @db.Date
-  endDate   DateTime @db.Date
-  goals     String[] // metas del ciclo como texto
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  startDate       DateTime  @db.Date
+  endDate         DateTime  @db.Date
+  goals           String[]
+  isActive        Boolean   @default(true)
+  isPaused        Boolean   @default(false)
+  pausedAt        DateTime? @db.Timestamptz
+  pauseReason     String?
+  totalPausedDays Int       @default(0)
+  restartReason   String?
+  createdAt       DateTime  @default(now())
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   weeklyReviews WeeklyReview[]

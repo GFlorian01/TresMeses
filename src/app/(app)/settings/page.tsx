@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getActiveCycle } from "@/lib/queries";
 import { CycleForm } from "@/components/settings/cycle-form";
 import { HabitManager } from "@/components/settings/habit-manager";
+import { PauseCycleCard } from "@/components/settings/pause-cycle-card";
+import { RestartCycleCard } from "@/components/settings/restart-cycle-card";
 import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { signOutAction } from "./actions";
@@ -49,6 +51,8 @@ export default async function SettingsPage() {
         <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />
         <NotificationCard />
         <CycleForm activeCycle={activeCycle} />
+        {activeCycle && <PauseCycleCard cycle={activeCycle} />}
+        {activeCycle && <RestartCycleCard />}
         <HabitManager habits={allHabits ?? []} />
 
         {/* Cerrar sesión */}

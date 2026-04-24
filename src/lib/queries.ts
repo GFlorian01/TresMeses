@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { calculateDayScore } from "@/lib/dashboard-queries";
 import type {
   Habit,
   DailyEntry,
@@ -162,6 +163,51 @@ export async function getOrCreateDailyEntry(userId: string, date: string) {
   );
 
   return getDailyEntry(userId, date);
+}
+
+// ─── Stats de pausa del ciclo ───
+
+export async function getCyclePauseStats(
+  userId: string,
+  startDate: string,
+  pausedAt: string
+) {
+  const supabase = await createClient();
+  const pauseDate = new Date(pausedAt).toISOString().split("T")[0];
+
+  const { data: entries } = await supabase
+    .from("daily_entries")
+    .select("*, habit_checks(*), meal_entries(*)")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .lte("date", pauseDate);
+
+  if (!entries || entries.length === 0) {
+    return { gymDays: 0, recoveryDays: 0, readingDays: 0, totalReadingMinutes: 0, avgScore: 0, totalDaysTracked: 0 };
+  }
+
+  let gymDays = 0, recoveryDays = 0, readingDays = 0, totalReadingMinutes = 0, totalScore = 0;
+
+  for (const entry of entries) {
+    if (entry.is_gym_day) gymDays++;
+    if (entry.is_recovery_day) recoveryDays++;
+    if (entry.reading_minutes > 0) {
+      readingDays++;
+      totalReadingMinutes += entry.reading_minutes;
+    }
+    totalScore += calculateDayScore(
+      entry as DailyEntry & { habit_checks: HabitCheck[]; meal_entries: MealEntry[] }
+    );
+  }
+
+  return {
+    gymDays,
+    recoveryDays,
+    readingDays,
+    totalReadingMinutes,
+    avgScore: Math.round(totalScore / entries.length),
+    totalDaysTracked: entries.length,
+  };
 }
 
 // ─── Updates ───
