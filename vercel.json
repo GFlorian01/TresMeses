@@ -3,6 +3,14 @@
     {
       "path": "/api/push/send",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/push/send-motivational",
+      "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/push/send-progress",
+      "schedule": "0 2 * * *"
     }
   ]
 }
