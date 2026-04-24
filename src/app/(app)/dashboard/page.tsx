@@ -34,11 +34,13 @@ export default async function DashboardPage() {
 
   const weekStart = getCurrentWeekStart(tz);
 
-  const [weekEntries, streak, cycleProgress, gymSessions] = await Promise.all([
-    getWeekData(user.id, weekStart),
-    getStreak(user.id, tz),
-    getCycleProgress(user.id, tz),
-    getGymSessionsLast2Weeks(user.id, tz),
+  const cycleProgress = await getCycleProgress(user.id, tz);
+  const cycleStart = cycleProgress?.cycle.start_date;
+
+  const [weekEntries, streak, gymSessions] = await Promise.all([
+    getWeekData(user.id, weekStart, cycleStart),
+    getStreak(user.id, tz, cycleStart),
+    getGymSessionsLast2Weeks(user.id, tz, cycleStart),
   ]);
 
   const weekScore = calculateWeekScore(weekEntries);

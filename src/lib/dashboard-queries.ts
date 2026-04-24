@@ -33,18 +33,23 @@ export function calculateDayScore(
 }
 
 // ─── Datos de la semana actual ───
-export async function getWeekData(userId: string, weekStart: string) {
+export async function getWeekData(userId: string, weekStart: string, cycleStartDate?: string) {
   const supabase = await createClient();
 
   const start = new Date(weekStart + "T12:00:00");
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
 
+  // Only show entries from the current cycle onwards
+  const minDate = cycleStartDate && cycleStartDate > start.toISOString().split("T")[0]
+    ? cycleStartDate
+    : start.toISOString().split("T")[0];
+
   const { data: entries } = await supabase
     .from("daily_entries")
     .select("*, habit_checks(*), meal_entries(*)")
     .eq("user_id", userId)
-    .gte("date", start.toISOString().split("T")[0])
+    .gte("date", minDate)
     .lte("date", end.toISOString().split("T")[0])
     .order("date");
 
@@ -66,22 +71,31 @@ export function calculateWeekScore(
 // ─── Racha de días consecutivos ───
 export async function getStreak(
   userId: string,
-  tz: string = DEFAULT_TIMEZONE
+  tz: string = DEFAULT_TIMEZONE,
+  cycleStartDate?: string
 ): Promise<number> {
   const supabase = await createClient();
 
-  const { data: entries } = await supabase
+  let query = supabase
     .from("daily_entries")
     .select("date, habit_checks(*), meal_entries(*), is_gym_day, is_recovery_day, reading_minutes")
     .eq("user_id", userId)
     .order("date", { ascending: false })
     .limit(90);
 
+  if (cycleStartDate) {
+    query = query.gte("date", cycleStartDate);
+  }
+
+  const { data: entries } = await query;
+
   if (!entries || entries.length === 0) return 0;
 
   let streak = 0;
   for (let i = 0; i < 90; i++) {
     const dateStr = getDaysAgoStr(i, tz);
+    // Stop counting if we've gone before the cycle start
+    if (cycleStartDate && dateStr < cycleStartDate) break;
     const entry = entries.find((e) => e.date === dateStr);
     if (!entry) break;
 
@@ -129,17 +143,23 @@ export async function getCycleProgress(
 // ─── Sesiones de gym en las últimas 2 semanas ───
 export async function getGymSessionsLast2Weeks(
   userId: string,
-  tz: string = DEFAULT_TIMEZONE
+  tz: string = DEFAULT_TIMEZONE,
+  cycleStartDate?: string
 ): Promise<number> {
   const supabase = await createClient();
   const twoWeeksAgoStr = getDaysAgoStr(13, tz);
+
+  // Use the later of twoWeeksAgo or cycleStartDate so old cycles don't bleed in
+  const minDate = cycleStartDate && cycleStartDate > twoWeeksAgoStr
+    ? cycleStartDate
+    : twoWeeksAgoStr;
 
   const { count } = await supabase
     .from("daily_entries")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("is_gym_day", true)
-    .gte("date", twoWeeksAgoStr);
+    .gte("date", minDate);
 
   return count ?? 0;
 }
