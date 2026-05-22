@@ -6,7 +6,11 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTodayStr, parseDateSafe, DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
-export default async function CheckPage() {
+export default async function CheckPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const supabase = await createClient();
 
   let user;
@@ -41,11 +45,20 @@ export default async function CheckPage() {
     if (!activeCycle) redirect("/onboarding");
     // Si tiene ciclo, continuar — onboarding_complete se fijará cuando la migración se aplique
   }
+
   const today = getTodayStr(tz);
+
+  // Validar fecha del search param — no permitir fechas futuras
+  const params = await searchParams;
+  const requestedDate = params.date;
+  const dateStr =
+    requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= today
+      ? requestedDate
+      : today;
 
   let entry;
   try {
-    entry = await getOrCreateDailyEntry(user.id, today);
+    entry = await getOrCreateDailyEntry(user.id, dateStr);
   } catch {
     return (
       <div className="min-h-screen bg-background pb-24">
@@ -61,7 +74,7 @@ export default async function CheckPage() {
 
   if (!entry) redirect("/login");
 
-  const formattedDate = format(parseDateSafe(today), "EEEE d 'de' MMMM", {
+  const formattedDate = format(parseDateSafe(dateStr), "EEEE d 'de' MMMM", {
     locale: es,
   });
 
@@ -76,6 +89,8 @@ export default async function CheckPage() {
       meals={entry.meal_entries ?? []}
       initialReadingMinutes={entry.reading_minutes}
       initialHasTraining={entry.is_gym_day || entry.is_recovery_day}
+      dateStr={dateStr}
+      todayStr={today}
     />
   );
 }

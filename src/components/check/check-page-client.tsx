@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { HabitChecklist } from "./habit-checklist";
 import { GymToggle } from "./gym-toggle";
 import { MealTracker } from "./meal-tracker";
 import { ReadingTracker } from "./reading-tracker";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { MealType } from "@/types/database";
 
@@ -36,6 +37,14 @@ interface CheckPageClientProps {
   meals: MealItem[];
   initialReadingMinutes: number;
   initialHasTraining: boolean;
+  dateStr: string;
+  todayStr: string;
+}
+
+function offsetDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
 export function CheckPageClient({
@@ -48,6 +57,8 @@ export function CheckPageClient({
   meals: initialMeals,
   initialReadingMinutes,
   initialHasTraining,
+  dateStr,
+  todayStr,
 }: CheckPageClientProps) {
   // Estado central: arrays completos para derivar progreso sin callbacks
   const [habitChecks, setHabitChecks] = useState(initialHabitChecks);
@@ -55,7 +66,18 @@ export function CheckPageClient({
   const [hasReading, setHasReading] = useState(initialReadingMinutes > 0);
   const [hasTraining, setHasTraining] = useState(initialHasTraining);
 
+  const router = useRouter();
   const supabase = createClient();
+
+  const isToday = dateStr === todayStr;
+
+  const goToDate = (newDate: string) => {
+    if (newDate === todayStr) {
+      router.push("/check");
+    } else {
+      router.push(`/check?date=${newDate}`);
+    }
+  };
 
   // Progreso derivado directamente del estado — siempre sincronizado
   const habitsDone = habitChecks.filter((c) => c.completed).length;
@@ -88,13 +110,30 @@ export function CheckPageClient({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                Hola, {userName}
+                {isToday ? `Hola, ${userName}` : userName}
               </h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground capitalize">
-                  {formattedDate}
-                </p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <button
+                  onClick={() => goToDate(offsetDate(dateStr, -1))}
+                  className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  aria-label="Día anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {formattedDate}
+                  </p>
+                </div>
+                <button
+                  onClick={() => goToDate(offsetDate(dateStr, 1))}
+                  disabled={isToday}
+                  className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Día siguiente"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
