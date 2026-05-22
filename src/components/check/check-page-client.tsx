@@ -110,7 +110,7 @@ export function CheckPageClient({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                {isToday ? `Hola, ${userName}` : userName}
+                Hola, {userName}
               </h1>
               <div className="flex items-center gap-1 mt-0.5">
                 <button
