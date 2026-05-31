@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { calculateDayScore } from "@/lib/dashboard-queries";
@@ -37,7 +38,8 @@ export function WeekCalendar({
     const isToday = dateStr === today;
     const isFuture = dateStr > today;
 
-    return { dateStr, day: d.getDate(), score, isToday, isFuture, label: dayLabels[i] };
+    const href = isFuture ? null : isToday ? "/check" : `/check?date=${dateStr}`;
+    return { dateStr, day: d.getDate(), score, isToday, isFuture, label: dayLabels[i], href };
   });
 
   return (
@@ -55,20 +57,31 @@ export function WeekCalendar({
               <span className="text-[10px] font-medium text-muted-foreground">
                 {d.label}
               </span>
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-xl flex flex-col items-center justify-center text-xs transition-all",
-                  d.isToday && "ring-2 ring-primary",
-                  d.isFuture && "opacity-25 bg-muted",
-                  !d.isFuture && d.score >= 0 && getScoreColor(d.score),
-                  !d.isFuture && d.score === -1 && "bg-muted/50"
-                )}
-              >
-                <span className="font-semibold text-[11px]">{d.day}</span>
-                {!d.isFuture && d.score >= 0 && (
-                  <span className="text-[9px] opacity-80">{d.score}%</span>
-                )}
-              </div>
+              {d.href ? (
+                <Link
+                  href={d.href}
+                  className={cn(
+                    "w-10 h-10 rounded-xl flex flex-col items-center justify-center text-xs transition-all hover:scale-105 active:scale-95",
+                    d.isToday && "ring-2 ring-primary",
+                    d.score >= 0 && getScoreColor(d.score),
+                    d.score === -1 && "bg-muted/50"
+                  )}
+                >
+                  <span className="font-semibold text-[11px]">{d.day}</span>
+                  {d.score >= 0 && (
+                    <span className="text-[9px] opacity-80">{d.score}%</span>
+                  )}
+                </Link>
+              ) : (
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-xl flex flex-col items-center justify-center text-xs",
+                    "opacity-25 bg-muted"
+                  )}
+                >
+                  <span className="font-semibold text-[11px]">{d.day}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
