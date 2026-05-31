@@ -199,6 +199,39 @@ export async function restartCycleAction(reason: string) {
   revalidatePath("/review");
 }
 
+export async function saveEmailPrefsAction(data: {
+  morning_enabled: boolean;
+  morning_time: string;
+  evening_enabled: boolean;
+  evening_time: string;
+  weekly_enabled: boolean;
+  weekly_time: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const toTime = (t: string) => (t.length === 5 ? `${t}:00` : t);
+
+  await supabase.from("email_preferences").upsert(
+    {
+      user_id: user.id,
+      morning_enabled: data.morning_enabled,
+      morning_time: toTime(data.morning_time),
+      evening_enabled: data.evening_enabled,
+      evening_time: toTime(data.evening_time),
+      weekly_enabled: data.weekly_enabled,
+      weekly_time: toTime(data.weekly_time),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  revalidatePath("/settings");
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();

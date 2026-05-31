@@ -11,6 +11,7 @@ import { signOutAction } from "./actions";
 import { Settings, LogOut } from "lucide-react";
 import { NotificationCard } from "@/components/settings/notification-card";
 import { TimezoneCard } from "@/components/settings/timezone-card";
+import { EmailCard } from "@/components/settings/email-card";
 import { DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export default async function SettingsPage() {
@@ -35,6 +36,12 @@ export default async function SettingsPage() {
     .eq("user_id", user.id)
     .order("sort_order");
 
+  const { data: emailPrefs } = await supabase
+    .from("email_preferences")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto p-4 space-y-4">
@@ -50,6 +57,10 @@ export default async function SettingsPage() {
 
         <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />
         <NotificationCard />
+        <EmailCard
+          initialPrefs={emailPrefs ?? null}
+          userEmail={user.email ?? ""}
+        />
         <CycleForm activeCycle={activeCycle} />
         {activeCycle && <PauseCycleCard cycle={activeCycle} />}
         {activeCycle && <RestartCycleCard />}
