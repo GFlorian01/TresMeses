@@ -80,6 +80,7 @@ export default async function CheckPage({
 
   return (
     <CheckPageClient
+      key={dateStr}
       userName={user.user_metadata?.full_name?.split(" ")[0] ?? ""}
       formattedDate={formattedDate}
       habitChecks={entry.habit_checks ?? []}
