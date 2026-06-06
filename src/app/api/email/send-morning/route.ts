@@ -77,15 +77,15 @@ export async function GET(request: Request) {
     .select("user_id, morning_sent_date")
     .eq("morning_enabled", true);
 
-  if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0 });
+  if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0, debug: "no prefs found" });
 
   const userIds = prefs.map((p) => p.user_id);
-  const { data: users } = await supabase
+  const { data: users, error: usersError } = await supabase
     .from("users")
     .select("id, email, name, timezone")
     .in("id", userIds);
 
-  if (!users || users.length === 0) return NextResponse.json({ sent: 0 });
+  if (!users || users.length === 0) return NextResponse.json({ sent: 0, debug: "no users found", usersError });
 
   let sent = 0;
   const errors: unknown[] = [];
