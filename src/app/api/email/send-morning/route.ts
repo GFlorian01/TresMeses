@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import {
-  getCurrentTimeStr,
   getTodayStr,
   getDaysAgoStr,
   DEFAULT_TIMEZONE,
@@ -16,21 +15,11 @@ export const dynamic = "force-dynamic";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://tresmeses.app";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "TresMeses <noreply@tresmeses.app>";
-const WINDOW_MINUTES = 25;
-
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function isWithinWindow(currentTime: string, targetTime: string): boolean {
-  const [ch, cm] = currentTime.split(":").map(Number);
-  const [th, tm] = targetTime.split(":").map(Number);
-  const currentMins = ch * 60 + cm;
-  const targetMins = th * 60 + tm;
-  return Math.abs(currentMins - targetMins) <= WINDOW_MINUTES;
 }
 
 function calculateScore(
@@ -85,7 +74,7 @@ export async function GET(request: Request) {
   // Usuarios con email morning habilitado
   const { data: prefs } = await supabase
     .from("email_preferences")
-    .select("user_id, morning_time, morning_sent_date")
+    .select("user_id, morning_sent_date")
     .eq("morning_enabled", true);
 
   if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0 });
@@ -105,11 +94,9 @@ export async function GET(request: Request) {
     if (!user?.email) continue;
 
     const tz = user.timezone ?? DEFAULT_TIMEZONE;
-    const currentTime = getCurrentTimeStr(tz);
     const today = getTodayStr(tz);
 
-    // Verificar ventana de tiempo y no duplicar
-    if (!isWithinWindow(currentTime, pref.morning_time.slice(0, 5))) continue;
+    // No enviar dos veces el mismo día
     if (pref.morning_sent_date === today) continue;
 
     // Datos de ayer para contexto

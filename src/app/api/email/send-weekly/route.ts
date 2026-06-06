@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import {
-  getCurrentTimeStr,
   getTodayStr,
   getDaysAgoStr,
   getWeekStartStr,
@@ -17,8 +16,6 @@ export const dynamic = "force-dynamic";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://tresmeses.app";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "TresMeses <noreply@tresmeses.app>";
-const WINDOW_MINUTES = 25;
-
 const DAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"];
 
 function getSupabaseAdmin() {
@@ -26,14 +23,6 @@ function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function isWithinWindow(currentTime: string, targetTime: string): boolean {
-  const [ch, cm] = currentTime.split(":").map(Number);
-  const [th, tm] = targetTime.split(":").map(Number);
-  const currentMins = ch * 60 + cm;
-  const targetMins = th * 60 + tm;
-  return Math.abs(currentMins - targetMins) <= WINDOW_MINUTES;
 }
 
 function isSunday(tz: string): boolean {
@@ -92,7 +81,7 @@ export async function GET(request: Request) {
 
   const { data: prefs } = await supabase
     .from("email_preferences")
-    .select("user_id, weekly_time, weekly_sent_date")
+    .select("user_id, weekly_sent_date")
     .eq("weekly_enabled", true);
 
   if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0 });
@@ -112,12 +101,10 @@ export async function GET(request: Request) {
     if (!user?.email) continue;
 
     const tz = user.timezone ?? DEFAULT_TIMEZONE;
-    const currentTime = getCurrentTimeStr(tz);
     const today = getTodayStr(tz);
 
-    // Solo domingos + ventana horaria + sin duplicados esta semana
+    // Solo domingos + sin duplicados
     if (!isSunday(tz)) continue;
-    if (!isWithinWindow(currentTime, pref.weekly_time.slice(0, 5))) continue;
     if (pref.weekly_sent_date === today) continue;
 
     // Obtener datos de la semana (lunes a domingo)
