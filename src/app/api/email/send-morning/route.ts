@@ -88,16 +88,17 @@ export async function GET(request: Request) {
   if (!users || users.length === 0) return NextResponse.json({ sent: 0 });
 
   let sent = 0;
+  const errors: unknown[] = [];
 
   for (const pref of prefs) {
     const user = users.find((u) => u.id === pref.user_id);
-    if (!user?.email) continue;
+    if (!user?.email) { errors.push(`no email for user ${pref.user_id}`); continue; }
 
     const tz = user.timezone ?? DEFAULT_TIMEZONE;
     const today = getTodayStr(tz);
 
     // No enviar dos veces el mismo día
-    if (pref.morning_sent_date === today) continue;
+    if (pref.morning_sent_date === today) { errors.push(`already sent today for ${user.email}`); continue; }
 
     // Datos de ayer para contexto
     const yesterday = getDaysAgoStr(1, tz);
@@ -139,9 +140,9 @@ export async function GET(request: Request) {
         .update({ morning_sent_date: today })
         .eq("user_id", user.id);
     } else {
-      console.error("Resend error:", JSON.stringify(error));
+      errors.push(error);
     }
   }
 
-  return NextResponse.json({ sent });
+  return NextResponse.json({ sent, errors });
 }
