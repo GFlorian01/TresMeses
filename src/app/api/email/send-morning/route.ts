@@ -82,7 +82,7 @@ export async function GET(request: Request) {
   const userIds = prefs.map((p) => p.user_id);
   const { data: users, error: usersError } = await supabase
     .from("users")
-    .select("id, email, name, timezone")
+    .select("id, email, name")
     .in("id", userIds);
 
   if (!users || users.length === 0) return NextResponse.json({ sent: 0, debug: "no users found", usersError });
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
     const user = users.find((u) => u.id === pref.user_id);
     if (!user?.email) { errors.push(`no email for user ${pref.user_id}`); continue; }
 
-    const tz = user.timezone ?? DEFAULT_TIMEZONE;
+    const tz = DEFAULT_TIMEZONE;
     const today = getTodayStr(tz);
 
     // No enviar dos veces el mismo día

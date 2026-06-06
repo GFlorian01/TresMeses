@@ -89,7 +89,7 @@ export async function GET(request: Request) {
   const userIds = prefs.map((p) => p.user_id);
   const { data: users } = await supabase
     .from("users")
-    .select("id, email, name, timezone")
+    .select("id, email, name")
     .in("id", userIds);
 
   if (!users || users.length === 0) return NextResponse.json({ sent: 0 });
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
     const user = users.find((u) => u.id === pref.user_id);
     if (!user?.email) continue;
 
-    const tz = user.timezone ?? DEFAULT_TIMEZONE;
+    const tz = DEFAULT_TIMEZONE;
     const today = getTodayStr(tz);
 
     // Solo domingos + sin duplicados
