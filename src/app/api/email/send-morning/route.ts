@@ -77,28 +77,27 @@ export async function GET(request: Request) {
     .select("user_id, morning_sent_date")
     .eq("morning_enabled", true);
 
-  if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0, debug: "no prefs found" });
+  if (!prefs || prefs.length === 0) return NextResponse.json({ sent: 0 });
 
   const userIds = prefs.map((p) => p.user_id);
-  const { data: users, error: usersError } = await supabase
+  const { data: users } = await supabase
     .from("users")
     .select("id, email, name")
     .in("id", userIds);
 
-  if (!users || users.length === 0) return NextResponse.json({ sent: 0, debug: "no users found", usersError });
+  if (!users || users.length === 0) return NextResponse.json({ sent: 0 });
 
   let sent = 0;
-  const errors: unknown[] = [];
 
   for (const pref of prefs) {
     const user = users.find((u) => u.id === pref.user_id);
-    if (!user?.email) { errors.push(`no email for user ${pref.user_id}`); continue; }
+    if (!user?.email) continue;
 
     const tz = DEFAULT_TIMEZONE;
     const today = getTodayStr(tz);
 
     // No enviar dos veces el mismo día
-    if (pref.morning_sent_date === today) { errors.push(`already sent today for ${user.email}`); continue; }
+    if (pref.morning_sent_date === today) continue;
 
     // Datos de ayer para contexto
     const yesterday = getDaysAgoStr(1, tz);
@@ -126,7 +125,7 @@ export async function GET(request: Request) {
       appUrl: APP_URL,
     });
 
-    const { data: emailData, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
       subject: `Buenos días ${firstName} 🌅 — ${formattedDate}`,
@@ -139,10 +138,8 @@ export async function GET(request: Request) {
         .from("email_preferences")
         .update({ morning_sent_date: today })
         .eq("user_id", user.id);
-    } else {
-      errors.push(error);
     }
   }
 
-  return NextResponse.json({ sent, errors });
+  return NextResponse.json({ sent });
 }
