@@ -125,7 +125,7 @@ export async function GET(request: Request) {
       appUrl: APP_URL,
     });
 
-    const { error } = await resend.emails.send({
+    const { data: emailData, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
       subject: `Buenos días ${firstName} 🌅 — ${formattedDate}`,
@@ -138,6 +138,8 @@ export async function GET(request: Request) {
         .from("email_preferences")
         .update({ morning_sent_date: today })
         .eq("user_id", user.id);
+    } else {
+      console.error("Resend error:", JSON.stringify(error));
     }
   }
 
