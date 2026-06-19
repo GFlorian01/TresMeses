@@ -3,8 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function ReviewLoading() {
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+    <div className="min-h-screen bg-background pb-24 lg:pb-8">
+      <div className="max-w-lg lg:max-w-3xl mx-auto p-4 lg:p-8 space-y-4 lg:space-y-6">
         <Skeleton className="h-6 w-40 mt-2" />
 
         {/* Score banner */}
