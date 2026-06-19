@@ -62,18 +62,12 @@ export function PauseOverlay({ data }: { data: PauseData }) {
   // Gray tint only, modal dismissed for this page visit
   if (!showModal) {
     return (
-      <div
-        className="fixed inset-0 z-40 bg-gray-950/25 pointer-events-none"
-        style={{ bottom: "3.5rem" }}
-      />
+      <div className="fixed inset-0 z-40 bg-gray-950/25 pointer-events-none bottom-14 lg:bottom-0" />
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center p-4"
-      style={{ bottom: "3.5rem" }}
-    >
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bottom-14 lg:bottom-0">
       {/* Backdrop blur */}
       <div className="absolute inset-0 bg-gray-950/75 backdrop-blur-md" />
 

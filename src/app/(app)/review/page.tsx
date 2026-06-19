@@ -14,13 +14,11 @@ export default async function ReviewPage() {
 
   if (!data.hasCycle) {
     return (
-      <div className="min-h-screen bg-background pb-24">
-        <div className="max-w-lg mx-auto p-4">
+      <div className="min-h-screen bg-background pb-24 lg:pb-8">
+        <div className="max-w-lg lg:max-w-3xl mx-auto p-4 lg:p-8">
           <div className="flex items-center gap-2 pt-2 mb-4">
             <ClipboardList className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">
-              Revision semanal
-            </h1>
+            <h1 className="text-xl font-bold tracking-tight">Revision semanal</h1>
           </div>
           <Card className="border-dashed">
             <CardContent className="py-8 text-center">
@@ -28,9 +26,7 @@ export default async function ReviewPage() {
                 Necesitas crear un ciclo primero.
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Ve a{" "}
-                <span className="text-primary font-medium">Config</span> para
-                iniciar uno.
+                Ve a <span className="text-primary font-medium">Config</span> para iniciar uno.
               </p>
             </CardContent>
           </Card>
@@ -40,13 +36,11 @@ export default async function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+    <div className="min-h-screen bg-background pb-24 lg:pb-8">
+      <div className="max-w-lg lg:max-w-3xl mx-auto p-4 lg:p-8 space-y-4 lg:space-y-6">
         <div className="flex items-center gap-2 pt-2">
           <ClipboardList className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">
-            Revision semanal
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight">Revision semanal</h1>
         </div>
 
         <ReviewForm

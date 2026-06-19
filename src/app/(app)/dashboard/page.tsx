@@ -37,46 +37,48 @@ export default async function DashboardPage() {
 
   const weekScore = calculateWeekScore(weekEntries);
 
+  const cycleBlock = cycleProgress ? (
+    <CycleProgress
+      currentWeek={cycleProgress.currentWeek}
+      totalWeeks={cycleProgress.totalWeeks}
+      progressPercent={cycleProgress.progressPercent}
+      goals={cycleProgress.cycle.goals}
+    />
+  ) : (
+    <Card className="border-dashed">
+      <CardContent className="py-8 text-center">
+        <p className="text-sm text-muted-foreground">No tienes un ciclo activo.</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Ve a <span className="text-primary font-medium">Config</span> para crear uno.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+    <div className="min-h-screen bg-background pb-24 lg:pb-8">
+      <div className="max-w-lg lg:max-w-5xl mx-auto p-4 lg:p-8 space-y-4 lg:space-y-6">
         <div className="flex items-center gap-2 pt-2">
           <BarChart3 className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
         </div>
 
-        {/* Score y Racha */}
-        <div className="grid grid-cols-2 gap-3">
-          <ScoreCard score={weekScore} label="Score semanal" />
-          <StreakCard streak={streak} />
+        {/* Desktop: columna principal + columna lateral de progreso */}
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6 space-y-4 lg:space-y-0">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <ScoreCard score={weekScore} label="Score semanal" />
+              <StreakCard streak={streak} />
+            </div>
+            <WeekCalendar entries={weekEntries} weekStart={weekStart} today={getTodayStr(tz)} />
+            <GymCounter sessions={gymSessions} />
+            {/* Progreso en mobile va aquí */}
+            <div className="lg:hidden">{cycleBlock}</div>
+          </div>
+
+          {/* Progreso del ciclo — en desktop va en columna lateral */}
+          <div className="hidden lg:block">{cycleBlock}</div>
         </div>
-
-        {/* Calendario semanal */}
-        <WeekCalendar entries={weekEntries} weekStart={weekStart} today={getTodayStr(tz)} />
-
-        {/* Gym counter */}
-        <GymCounter sessions={gymSessions} />
-
-        {/* Progreso del ciclo */}
-        {cycleProgress ? (
-          <CycleProgress
-            currentWeek={cycleProgress.currentWeek}
-            totalWeeks={cycleProgress.totalWeeks}
-            progressPercent={cycleProgress.progressPercent}
-            goals={cycleProgress.cycle.goals}
-          />
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                No tienes un ciclo activo.
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ve a <span className="text-primary font-medium">Config</span> para crear uno.
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

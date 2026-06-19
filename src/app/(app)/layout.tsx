@@ -1,4 +1,5 @@
 import { NavBar } from "@/components/nav-bar";
+import { Sidebar } from "@/components/sidebar";
 import { PauseOverlay } from "@/components/pause-overlay";
 import { getUser } from "@/lib/supabase/server";
 import { getActiveCycle, getCyclePauseStats } from "@/lib/queries";
@@ -40,10 +41,13 @@ export default async function AppLayout({
   }
 
   return (
-    <>
-      {children}
-      <NavBar />
-      {pauseData && <PauseOverlay data={pauseData} />}
-    </>
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex-1 lg:ml-60">
+        {children}
+        <NavBar />
+        {pauseData && <PauseOverlay data={pauseData} />}
+      </div>
+    </div>
   );
 }

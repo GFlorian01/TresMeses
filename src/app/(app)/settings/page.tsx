@@ -29,40 +29,47 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+    <div className="min-h-screen bg-background pb-24 lg:pb-8">
+      <div className="max-w-lg lg:max-w-5xl mx-auto p-4 lg:p-8 space-y-4 lg:space-y-6">
         <div className="flex items-center gap-2 pt-2">
           <Settings className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Configuracion</h1>
         </div>
 
-        <ProfileCard
-          name={user.user_metadata?.full_name ?? "—"}
-          email={user.email ?? ""}
-        />
+        {/* Desktop: columna usuario | columna ciclo+hábitos */}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
+          {/* Columna izquierda: perfil y preferencias */}
+          <div className="space-y-4">
+            <ProfileCard
+              name={user.user_metadata?.full_name ?? "—"}
+              email={user.email ?? ""}
+            />
+            <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />
+            <NotificationCard />
+            <EmailCard
+              initialPrefs={emailPrefs ?? null}
+              userEmail={user.email ?? ""}
+            />
+            <form action={signOutAction}>
+              <Button
+                variant="ghost"
+                className="w-full h-11 text-muted-foreground hover:text-destructive"
+                type="submit"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Cerrar sesion
+              </Button>
+            </form>
+          </div>
 
-        <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />
-        <NotificationCard />
-        <EmailCard
-          initialPrefs={emailPrefs ?? null}
-          userEmail={user.email ?? ""}
-        />
-        <CycleForm activeCycle={activeCycle} />
-        {activeCycle && <PauseCycleCard cycle={activeCycle} />}
-        {activeCycle && <RestartCycleCard />}
-        <HabitManager habits={allHabits ?? []} />
-
-        {/* Cerrar sesión */}
-        <form action={signOutAction}>
-          <Button
-            variant="ghost"
-            className="w-full h-11 text-muted-foreground hover:text-destructive"
-            type="submit"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Cerrar sesion
-          </Button>
-        </form>
+          {/* Columna derecha: ciclo y hábitos */}
+          <div className="space-y-4">
+            <CycleForm activeCycle={activeCycle} />
+            {activeCycle && <PauseCycleCard cycle={activeCycle} />}
+            {activeCycle && <RestartCycleCard />}
+            <HabitManager habits={allHabits ?? []} />
+          </div>
+        </div>
       </div>
     </div>
   );
