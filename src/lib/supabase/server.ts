@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -26,3 +27,21 @@ export async function createClient() {
     }
   );
 }
+
+// Deduplica auth.getUser() entre layout y páginas dentro del mismo render
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+});
+
+// Deduplica la query de timezone/onboarding entre check page y cualquier otro componente
+export const getUserRow = cache(async (userId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("users")
+    .select("timezone, onboarding_complete")
+    .eq("id", userId)
+    .single();
+  return data;
+});

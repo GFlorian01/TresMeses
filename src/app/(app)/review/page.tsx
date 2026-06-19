@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getReviewPageData } from "@/lib/review-queries";
 import { ReviewForm } from "@/components/review/review-form";
@@ -7,11 +7,7 @@ import { ClipboardList } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function ReviewPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getUser();
   if (!user) redirect("/login");
 
   const data = await getReviewPageData(user.id);

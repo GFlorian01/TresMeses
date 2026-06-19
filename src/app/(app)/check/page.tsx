@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { getUser, getUserRow } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getOrCreateDailyEntry } from "@/lib/queries";
+import { getOrCreateDailyEntry, getActiveCycle } from "@/lib/queries";
 import { CheckPageClient } from "@/components/check/check-page-client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -11,39 +11,16 @@ export default async function CheckPage({
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
-  const supabase = await createClient();
-
-  let user;
-  try {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
-  } catch {
-    redirect("/login");
-  }
-
+  const user = await getUser();
   if (!user) redirect("/login");
 
-  // Obtener timezone — query separada para no fallar si onboarding_complete no existe aún
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("timezone, onboarding_complete")
-    .eq("id", user.id)
-    .single();
-
+  // getUserRow y getActiveCycle usan cache() — sin round-trips extra si el layout ya los llamó
+  const userRow = await getUserRow(user.id);
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
 
-  // Verificar onboarding: usar ciclo activo como fuente de verdad (no depende de la columna)
   if (!userRow?.onboarding_complete) {
-    const { data: activeCycle } = await supabase
-      .from("cycles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .limit(1)
-      .single();
-
+    const activeCycle = await getActiveCycle(user.id);
     if (!activeCycle) redirect("/onboarding");
-    // Si tiene ciclo, continuar — onboarding_complete se fijará cuando la migración se aplique
   }
 
   const today = getTodayStr(tz);

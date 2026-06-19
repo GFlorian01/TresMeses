@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getUser, getUserRow } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
   getWeekData,
@@ -18,18 +18,10 @@ import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getUser();
   if (!user) redirect("/login");
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("timezone")
-    .eq("id", user.id)
-    .single();
+  const userRow = await getUserRow(user.id);
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
 
   const weekStart = getCurrentWeekStart(tz);

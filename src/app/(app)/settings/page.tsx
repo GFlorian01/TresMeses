@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser, getUserRow } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getActiveCycle } from "@/lib/queries";
 import { CycleForm } from "@/components/settings/cycle-form";
@@ -15,32 +15,18 @@ import { EmailCard } from "@/components/settings/email-card";
 import { DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getUser();
   if (!user) redirect("/login");
 
-  const activeCycle = await getActiveCycle(user.id);
+  // Estas dos usan cache() — sin round-trips extra si el layout ya las llamó
+  const supabase = await createClient();
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("timezone")
-    .eq("id", user.id)
-    .single();
-
-  const { data: allHabits } = await supabase
-    .from("habits")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("sort_order");
-
-  const { data: emailPrefs } = await supabase
-    .from("email_preferences")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const [activeCycle, userRow, { data: allHabits }, { data: emailPrefs }] = await Promise.all([
+    getActiveCycle(user.id),
+    getUserRow(user.id),
+    supabase.from("habits").select("*").eq("user_id", user.id).order("sort_order"),
+    supabase.from("email_preferences").select("*").eq("user_id", user.id).single(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background pb-24">

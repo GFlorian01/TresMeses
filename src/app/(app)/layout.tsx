@@ -1,6 +1,6 @@
 import { NavBar } from "@/components/nav-bar";
 import { PauseOverlay } from "@/components/pause-overlay";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 import { getActiveCycle, getCyclePauseStats } from "@/lib/queries";
 import type { PauseData } from "@/components/pause-overlay";
 
@@ -12,10 +12,7 @@ export default async function AppLayout({
   let pauseData: PauseData | null = null;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUser();
 
     if (user) {
       const cycle = await getActiveCycle(user.id);

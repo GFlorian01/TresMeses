@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { calculateDayScore } from "@/lib/dashboard-queries";
+import { cache } from "react";
 import type {
   Habit,
   DailyEntry,
@@ -37,7 +38,9 @@ export async function syncUser(supabaseUser: {
 
 // ─── Ciclo ───
 
-export async function getActiveCycle(userId: string): Promise<Cycle | null> {
+// cache() deduplica esta llamada entre layout, settings, dashboard y review
+// dentro del mismo render — solo un round-trip a la BD por request
+export const getActiveCycle = cache(async (userId: string): Promise<Cycle | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("cycles")
@@ -47,7 +50,7 @@ export async function getActiveCycle(userId: string): Promise<Cycle | null> {
     .single();
 
   return data;
-}
+});
 
 export async function createCycle(
   userId: string,

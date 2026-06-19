@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTodayStr, getWeekStartStr, getDaysAgoStr, DEFAULT_TIMEZONE } from "@/lib/date-utils";
+import { getActiveCycle } from "@/lib/queries";
 import type { DailyEntry, HabitCheck, MealEntry } from "@/types/database";
 
 // ─── Score de un día ───
@@ -117,14 +118,7 @@ export async function getCycleProgress(
   userId: string,
   tz: string = DEFAULT_TIMEZONE
 ) {
-  const supabase = await createClient();
-
-  const { data: cycle } = await supabase
-    .from("cycles")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("is_active", true)
-    .single();
+  const cycle = await getActiveCycle(userId); // usa cache() — no hace round-trip si ya fue llamada
 
   if (!cycle) return null;
 
