@@ -114,13 +114,7 @@ export async function getDailyEntry(userId: string, date: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("daily_entries")
-    .select(
-      `
-      *,
-      habit_checks(*, habit:habits(*)),
-      meal_entries(*)
-    `
-    )
+    .select("*, habit_checks(id, habit_id, completed, habit:habits(id, name, icon)), meal_entries(*)")
     .eq("user_id", userId)
     .eq("date", date)
     .single();
