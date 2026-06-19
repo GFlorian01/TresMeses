@@ -41,7 +41,7 @@ export default async function SettingsPage() {
           {/* Columna izquierda: perfil y preferencias */}
           <div className="space-y-4">
             <ProfileCard
-              name={user.user_metadata?.full_name ?? "—"}
+              name={userRow?.name ?? user.user_metadata?.full_name ?? "—"}
               email={user.email ?? ""}
             />
             <TimezoneCard currentTz={userRow?.timezone ?? DEFAULT_TIMEZONE} />

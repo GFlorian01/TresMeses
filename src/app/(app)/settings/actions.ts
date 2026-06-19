@@ -89,8 +89,9 @@ export async function updateNameAction(name: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  await supabase.auth.updateUser({ data: { full_name: name } });
-  await supabase.from("users").update({ name }).eq("id", user.id);
+  // La fuente de verdad del nombre es la tabla users, no auth metadata
+  const { error } = await supabase.from("users").update({ name }).eq("id", user.id);
+  if (error) throw error;
 
   revalidatePath("/", "layout");
 }

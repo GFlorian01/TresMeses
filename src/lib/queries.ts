@@ -18,17 +18,29 @@ export async function syncUser(supabaseUser: {
   user_metadata?: { full_name?: string; avatar_url?: string };
 }) {
   const supabase = await createClient();
+
+  // Intentar insertar (primer login)
+  const { error: insertError } = await supabase.from("users").insert({
+    id: supabaseUser.id,
+    email: supabaseUser.email!,
+    name: supabaseUser.user_metadata?.full_name ?? null,
+    avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
+  });
+
+  if (!insertError) {
+    const { data } = await supabase.from("users").select().eq("id", supabaseUser.id).single();
+    return data;
+  }
+
+  // Usuario ya existe — actualizar solo email y avatar, NO el nombre
+  // (el usuario puede haber cambiado su nombre en settings)
   const { data, error } = await supabase
     .from("users")
-    .upsert(
-      {
-        id: supabaseUser.id,
-        email: supabaseUser.email!,
-        name: supabaseUser.user_metadata?.full_name ?? null,
-        avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
-      },
-      { onConflict: "id" }
-    )
+    .update({
+      email: supabaseUser.email!,
+      avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
+    })
+    .eq("id", supabaseUser.id)
     .select()
     .single();
 

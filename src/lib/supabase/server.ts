@@ -40,7 +40,7 @@ export const getUserRow = cache(async (userId: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("users")
-    .select("timezone, onboarding_complete")
+    .select("timezone, onboarding_complete, name")
     .eq("id", userId)
     .single();
   return data;
