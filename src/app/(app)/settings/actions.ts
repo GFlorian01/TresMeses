@@ -37,8 +37,7 @@ export async function createCycleAction(formData: FormData) {
   });
 
   if (error) throw error;
-  revalidatePath("/settings");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function addHabitAction(formData: FormData) {
@@ -69,7 +68,7 @@ export async function addHabitAction(formData: FormData) {
   });
 
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function toggleHabitActive(habitId: string, isActive: boolean) {
@@ -80,7 +79,7 @@ export async function toggleHabitActive(habitId: string, isActive: boolean) {
     .eq("id", habitId);
 
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function updateNameAction(name: string) {
@@ -93,8 +92,7 @@ export async function updateNameAction(name: string) {
   await supabase.auth.updateUser({ data: { full_name: name } });
   await supabase.from("users").update({ name }).eq("id", user.id);
 
-  revalidatePath("/settings");
-  revalidatePath("/check");
+  revalidatePath("/", "layout");
 }
 
 export async function updateTimezoneAction(timezone: string) {
@@ -105,9 +103,7 @@ export async function updateTimezoneAction(timezone: string) {
   if (!user) redirect("/login");
 
   await supabase.from("users").update({ timezone }).eq("id", user.id);
-  revalidatePath("/settings");
-  revalidatePath("/check");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function pauseCycleAction(reason: string) {
@@ -128,10 +124,7 @@ export async function pauseCycleAction(reason: string) {
     .eq("is_active", true);
 
   if (error) throw error;
-  revalidatePath("/settings");
-  revalidatePath("/check");
-  revalidatePath("/dashboard");
-  revalidatePath("/review");
+  revalidatePath("/", "layout");
 }
 
 export async function resumeCycleAction() {
@@ -170,10 +163,7 @@ export async function resumeCycleAction() {
     .eq("id", cycle.id);
 
   if (error) throw error;
-  revalidatePath("/settings");
-  revalidatePath("/check");
-  revalidatePath("/dashboard");
-  revalidatePath("/review");
+  revalidatePath("/", "layout");
 }
 
 export async function restartCycleAction(reason: string) {
@@ -193,10 +183,7 @@ export async function restartCycleAction(reason: string) {
     .eq("user_id", user.id)
     .eq("is_active", true);
 
-  revalidatePath("/settings");
-  revalidatePath("/check");
-  revalidatePath("/dashboard");
-  revalidatePath("/review");
+  revalidatePath("/", "layout");
 }
 
 export async function saveEmailPrefsAction(data: {
@@ -229,7 +216,7 @@ export async function saveEmailPrefsAction(data: {
     { onConflict: "user_id" }
   );
 
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function signOutAction() {

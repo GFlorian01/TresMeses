@@ -92,12 +92,13 @@ export async function getStreak(
 
   if (!entries || entries.length === 0) return 0;
 
+  const entryByDate = new Map(entries.map((e) => [e.date, e]));
+
   let streak = 0;
   for (let i = 0; i < 90; i++) {
     const dateStr = getDaysAgoStr(i, tz);
-    // Stop counting if we've gone before the cycle start
     if (cycleStartDate && dateStr < cycleStartDate) break;
-    const entry = entries.find((e) => e.date === dateStr);
+    const entry = entryByDate.get(dateStr);
     if (!entry) break;
 
     const score = calculateDayScore(

@@ -11,11 +11,10 @@ export default async function OnboardingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("onboarding_complete, timezone, name")
-    .eq("id", user.id)
-    .single();
+  const [{ data: userRow }, { data: habits }] = await Promise.all([
+    supabase.from("users").select("onboarding_complete, timezone, name").eq("id", user.id).single(),
+    supabase.from("habits").select("id, name, icon").eq("user_id", user.id).eq("is_active", true).order("sort_order"),
+  ]);
 
   // Si tiene ciclo activo, onboarding ya fue completado
   if (userRow?.onboarding_complete) redirect("/check");
@@ -29,13 +28,6 @@ export default async function OnboardingPage() {
       .single();
     if (activeCycle) redirect("/check");
   }
-
-  const { data: habits } = await supabase
-    .from("habits")
-    .select("id, name, icon")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .order("sort_order");
 
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
   const todayStr = getTodayStr(tz);
