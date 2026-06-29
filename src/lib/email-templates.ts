@@ -1,25 +1,19 @@
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function scoreColor(score: number) {
-  if (score >= 80) return "#22c55e";
-  if (score >= 60) return "#eab308";
-  if (score >= 40) return "#f97316";
-  return "#ef4444";
+const SCORE_TIERS = [
+  { min: 80, color: "#22c55e", emoji: "🌟", msg: "¡Día de élite! Sigue así." },
+  { min: 60, color: "#eab308", emoji: "✅", msg: "Buen trabajo. Puedes llegar al 80%." },
+  { min: 40, color: "#f97316", emoji: "📈", msg: "A mitad de camino. ¿Qué puedes hacer ahora?" },
+  { min: 0,  color: "#ef4444", emoji: "💡", msg: "Cada pequeño paso cuenta. Mañana es un día nuevo." },
+];
+
+function scoreInfo(score: number) {
+  return SCORE_TIERS.find((t) => score >= t.min)!;
 }
 
-function scoreEmoji(score: number) {
-  if (score >= 80) return "🌟";
-  if (score >= 60) return "✅";
-  if (score >= 40) return "📈";
-  return "💡";
-}
-
-function scoreMessage(score: number) {
-  if (score >= 80) return "¡Día de élite! Sigue así.";
-  if (score >= 60) return "Buen trabajo. Puedes llegar al 80%.";
-  if (score >= 40) return "A mitad de camino. ¿Qué puedes hacer ahora?";
-  return "Cada pequeño paso cuenta. Mañana es un día nuevo.";
-}
+const scoreColor = (s: number) => scoreInfo(s).color;
+const scoreEmoji = (s: number) => scoreInfo(s).emoji;
+const scoreMessage = (s: number) => scoreInfo(s).msg;
 
 function wrap(content: string) {
   return `<!DOCTYPE html>

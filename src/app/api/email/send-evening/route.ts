@@ -4,11 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 import {
   getTodayStr,
   getDaysAgoStr,
+  formatFullDateEs,
   DEFAULT_TIMEZONE,
 } from "@/lib/date-utils";
 import { buildEveningEmail } from "@/lib/email-templates";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import type { DailyEntry, HabitCheck, MealEntry } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -106,7 +105,7 @@ export async function GET(request: Request) {
 
     const streak = await getStreak(supabase, user.id, tz);
     const firstName = user.name?.split(" ")[0] ?? "Campeón";
-    const formattedDate = format(new Date(today + "T12:00:00"), "EEEE d 'de' MMMM", { locale: es });
+    const formattedDate = formatFullDateEs(today);
 
     let score = 0;
     let habitsDone = 0;

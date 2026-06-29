@@ -48,6 +48,22 @@ export function parseDateSafe(dateStr: string): Date {
   return new Date(dateStr + "T12:00:00");
 }
 
+// ─── Formato de fechas en español ───────────────────────────────────────────
+
+/** "lunes 29 de junio" */
+export function formatFullDateEs(dateStr: string): string {
+  const d = parseDateSafe(dateStr);
+  const weekday = new Intl.DateTimeFormat("es", { weekday: "long" }).format(d);
+  const month = new Intl.DateTimeFormat("es", { month: "long" }).format(d);
+  return `${weekday} ${d.getDate()} de ${month}`;
+}
+
+/** "29 de junio" or "29 de junio, 2026" */
+export function formatShortDateEs(date: Date, includeYear = false): string {
+  const month = new Intl.DateTimeFormat("es", { month: "long" }).format(date);
+  return `${date.getDate()} de ${month}${includeYear ? `, ${date.getFullYear()}` : ""}`;
+}
+
 /**
  * Retorna la hora actual como "HH:MM:00" en la zona horaria dada.
  */

@@ -5,11 +5,10 @@ import {
   getTodayStr,
   getDaysAgoStr,
   getWeekStartStr,
+  formatShortDateEs,
   DEFAULT_TIMEZONE,
 } from "@/lib/date-utils";
 import { buildWeeklyEmail } from "@/lib/email-templates";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import type { DailyEntry, HabitCheck, MealEntry } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -157,7 +156,7 @@ export async function GET(request: Request) {
     }
 
     const firstName = user.name?.split(" ")[0] ?? "Campeón";
-    const weekLabel = format(weekStartDate, "'Semana del' d 'de' MMMM", { locale: es });
+    const weekLabel = `Semana del ${formatShortDateEs(weekStartDate)}`;
 
     const html = buildWeeklyEmail({
       name: firstName,

@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
-import { format, addDays } from "date-fns";
-import { es } from "date-fns/locale";
-import { parseDateSafe } from "@/lib/date-utils";
+import { parseDateSafe, formatShortDateEs } from "@/lib/date-utils";
 import { CalendarDays, Target, ListChecks, Loader2 } from "lucide-react";
 
 interface HabitItem {
@@ -39,7 +37,8 @@ export function StepConfirm({
   const [loading, setLoading] = useState(false);
 
   const startDate = parseDateSafe(todayStr);
-  const endDate = addDays(startDate, 83);
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 83);
 
   const activeDefaultHabits = defaultHabits.filter((h) => activeHabitIds.has(h.id));
   const allActiveHabits = [
@@ -71,8 +70,8 @@ export function StepConfirm({
         <div>
           <p className="text-sm font-medium">12 semanas</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {format(startDate, "d 'de' MMMM", { locale: es })} →{" "}
-            {format(endDate, "d 'de' MMMM, yyyy", { locale: es })}
+            {formatShortDateEs(startDate)} →{" "}
+            {formatShortDateEs(endDate, true)}
           </p>
         </div>
       </div>

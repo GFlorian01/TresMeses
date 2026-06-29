@@ -2,9 +2,7 @@ import { getUser, getUserRow } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateDailyEntry, getActiveCycle } from "@/lib/queries";
 import { CheckPageClient } from "@/components/check/check-page-client";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { getTodayStr, parseDateSafe, DEFAULT_TIMEZONE } from "@/lib/date-utils";
+import { getTodayStr, parseDateSafe, formatFullDateEs, DEFAULT_TIMEZONE } from "@/lib/date-utils";
 
 export default async function CheckPage({
   searchParams,
@@ -51,9 +49,7 @@ export default async function CheckPage({
 
   if (!entry) redirect("/login");
 
-  const formattedDate = format(parseDateSafe(dateStr), "EEEE d 'de' MMMM", {
-    locale: es,
-  });
+  const formattedDate = formatFullDateEs(dateStr);
 
   return (
     <CheckPageClient

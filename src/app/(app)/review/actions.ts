@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveWeeklyReview(
@@ -34,14 +33,4 @@ export async function saveWeeklyReview(
   revalidatePath("/review");
 }
 
-export async function restartCycle(userId: string, cycleId: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("cycles")
-    .update({ is_active: false })
-    .eq("id", cycleId)
-    .eq("user_id", userId);
-
-  revalidatePath("/");
-  redirect("/onboarding");
-}
+export { restartCycleAction as restartCycle } from "@/app/(app)/settings/actions";

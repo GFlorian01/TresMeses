@@ -1,12 +1,13 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { saveWeeklyReview, restartCycle } from "@/app/(app)/review/actions";
-import { cn } from "@/lib/utils";
+import { cn, getScoreTier } from "@/lib/utils";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +19,9 @@ import {
 } from "lucide-react";
 
 const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+function scoreColor(score: number) { return getScoreTier(score).text; }
+function scoreBg(score: number) { return getScoreTier(score).bg; }
 
 interface ReviewFormProps {
   userId: string;
@@ -35,18 +39,6 @@ interface ReviewFormProps {
   isSunday: boolean;
 }
 
-function scoreColor(score: number) {
-  if (score >= 85) return "text-green-500";
-  if (score >= 70) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function scoreBg(score: number) {
-  if (score >= 85) return "bg-green-500";
-  if (score >= 70) return "bg-yellow-500";
-  return "bg-red-500";
-}
-
 export function ReviewForm({
   userId,
   cycleId,
@@ -58,6 +50,7 @@ export function ReviewForm({
   existingReview,
   isSunday,
 }: ReviewFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isRestarting, startRestartTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -101,7 +94,8 @@ export function ReviewForm({
 
   const handleRestart = () => {
     startRestartTransition(async () => {
-      await restartCycle(userId, cycleId);
+      await restartCycle("Reinicio desde revisión semanal");
+      router.push("/onboarding");
     });
   };
 

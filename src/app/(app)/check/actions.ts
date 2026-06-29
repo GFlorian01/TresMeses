@@ -41,11 +41,3 @@ export async function toggleGymDay(
     .update({ is_gym_day: isGym, is_recovery_day: isRecovery })
     .eq("id", entryId);
 }
-
-export async function updateNotes(entryId: string, notes: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("daily_entries")
-    .update({ notes })
-    .eq("id", entryId);
-}

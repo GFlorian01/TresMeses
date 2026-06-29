@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, getScoreTier } from "@/lib/utils";
 import { calculateDayScore } from "@/lib/dashboard-queries";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import type { DailyEntry, HabitCheck, MealEntry } from "@/types/database";
@@ -12,11 +12,7 @@ type EntryWithRelations = DailyEntry & {
 
 const dayLabels = ["L", "M", "X", "J", "V", "S", "D"];
 
-function getScoreColor(score: number) {
-  if (score >= 85) return "bg-green-500/20 text-green-400 ring-green-500/30";
-  if (score >= 70) return "bg-yellow-500/20 text-yellow-400 ring-yellow-500/30";
-  return "bg-red-500/20 text-red-400 ring-red-500/30";
-}
+const getScoreColor = (score: number) => getScoreTier(score).ring;
 
 export function WeekCalendar({
   entries,
