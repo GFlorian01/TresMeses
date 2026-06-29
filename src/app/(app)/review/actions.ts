@@ -33,4 +33,3 @@ export async function saveWeeklyReview(
   revalidatePath("/review");
 }
 
-export { restartCycleAction as restartCycle } from "@/app/(app)/settings/actions";
