@@ -6,11 +6,18 @@ import { ReviewHistory } from "@/components/review/review-history";
 import { ClipboardList } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default async function ReviewPage() {
+export default async function ReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  const data = await getReviewPageData(user.id);
+  const params = await searchParams;
+  const requestedWeek = params.week ? parseInt(params.week) : undefined;
+
+  const data = await getReviewPageData(user.id, requestedWeek);
 
   if (!data.hasCycle) {
     return (
@@ -46,9 +53,13 @@ export default async function ReviewPage() {
         <ReviewForm
           userId={user.id}
           cycleId={data.cycle.id}
-          weekNumber={data.currentWeek}
+          viewWeek={data.viewWeek}
+          currentWeek={data.currentWeek}
           weekScore={data.weekScore}
+          weekScores={data.weekScores}
+          dailyGrid={data.dailyGrid}
           existingReview={data.existingReview}
+          isSunday={data.isSunday}
         />
 
         <ReviewHistory reviews={data.allReviews} />

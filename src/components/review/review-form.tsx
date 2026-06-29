@@ -5,48 +5,91 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveWeeklyReview } from "@/app/(app)/review/actions";
+import { saveWeeklyReview, restartCycle } from "@/app/(app)/review/actions";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  TrendingUp,
+  Heart,
+} from "lucide-react";
+
+const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 interface ReviewFormProps {
   userId: string;
   cycleId: string;
-  weekNumber: number;
+  viewWeek: number;
+  currentWeek: number;
   weekScore: number;
+  weekScores: Array<{ week: number; score: number; hasData: boolean }>;
+  dailyGrid: Array<{ date: string; score: number | null }>;
   existingReview: {
     reflection: string | null;
     cause_analysis: string | null;
     load_adjustment: string | null;
   } | null;
+  isSunday: boolean;
+}
+
+function scoreColor(score: number) {
+  if (score >= 85) return "text-green-500";
+  if (score >= 70) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function scoreBg(score: number) {
+  if (score >= 85) return "bg-green-500";
+  if (score >= 70) return "bg-yellow-500";
+  return "bg-red-500";
 }
 
 export function ReviewForm({
   userId,
   cycleId,
-  weekNumber,
+  viewWeek,
+  currentWeek,
   weekScore,
+  weekScores,
+  dailyGrid,
   existingReview,
+  isSunday,
 }: ReviewFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [isRestarting, startRestartTransition] = useTransition();
   const [saved, setSaved] = useState(false);
-  const [reflection, setReflection] = useState(
-    existingReview?.reflection ?? ""
-  );
-  const [causeAnalysis, setCauseAnalysis] = useState(
-    existingReview?.cause_analysis ?? ""
-  );
-  const [loadAdjustment, setLoadAdjustment] = useState(
-    existingReview?.load_adjustment ?? ""
-  );
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [reflection, setReflection] = useState(existingReview?.reflection ?? "");
+  const [causeAnalysis, setCauseAnalysis] = useState(existingReview?.cause_analysis ?? "");
+  const [loadAdjustment, setLoadAdjustment] = useState(existingReview?.load_adjustment ?? "");
 
   const needsAnalysis = weekScore < 85;
   const isGood = weekScore >= 85;
 
+  // Compliance analysis
+  const completedWeeks1to4 = weekScores.filter(w => w.week <= 4 && w.hasData);
+  const avg1to4 =
+    completedWeeks1to4.length > 0
+      ? Math.round(completedWeeks1to4.reduce((s, w) => s + w.score, 0) / completedWeeks1to4.length)
+      : null;
+
+  const completedWeeks5to8 = weekScores.filter(w => w.week >= 5 && w.week <= 8 && w.hasData);
+  const avg5to8 =
+    completedWeeks5to8.length > 0
+      ? Math.round(completedWeeks5to8.reduce((s, w) => s + w.score, 0) / completedWeeks5to8.length)
+      : null;
+
+  const showPromise = currentWeek >= 5 && avg1to4 !== null && avg1to4 < 75;
+  const showMotivational = currentWeek >= 9 && avg5to8 !== null && avg5to8 < 75;
+  const showRestart = showPromise || showMotivational || isSunday;
+
   const handleSave = () => {
     setSaved(false);
     startTransition(async () => {
-      await saveWeeklyReview(userId, cycleId, weekNumber, {
+      await saveWeeklyReview(userId, cycleId, viewWeek, {
         score: weekScore,
         reflection,
         causeAnalysis,
@@ -56,8 +99,45 @@ export function ReviewForm({
     });
   };
 
+  const handleRestart = () => {
+    startRestartTransition(async () => {
+      await restartCycle(userId, cycleId);
+    });
+  };
+
   return (
     <div className="space-y-4">
+      {/* Week navigation */}
+      <div className="flex items-center justify-between">
+        <a
+          href={viewWeek > 1 ? `/review?week=${viewWeek - 1}` : undefined}
+          className={cn(
+            "flex items-center gap-1 text-sm font-medium transition-colors",
+            viewWeek > 1
+              ? "text-primary hover:text-primary/80"
+              : "text-muted-foreground pointer-events-none opacity-30"
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Semana {viewWeek - 1}
+        </a>
+        <span className="text-sm font-semibold text-foreground">
+          Semana {viewWeek} / {currentWeek}
+        </span>
+        <a
+          href={viewWeek < currentWeek ? `/review?week=${viewWeek + 1}` : undefined}
+          className={cn(
+            "flex items-center gap-1 text-sm font-medium transition-colors",
+            viewWeek < currentWeek
+              ? "text-primary hover:text-primary/80"
+              : "text-muted-foreground pointer-events-none opacity-30"
+          )}
+        >
+          Semana {viewWeek + 1}
+          <ChevronRight className="h-4 w-4" />
+        </a>
+      </div>
+
       {/* Score banner */}
       <Card
         className={cn(
@@ -73,7 +153,7 @@ export function ReviewForm({
               : "bg-gradient-to-r from-red-500 to-rose-400"
           )}
         />
-        <CardContent className="pt-5 pb-4">
+        <CardContent className="pt-5 pb-4 space-y-4">
           <div className="flex items-center gap-3">
             <div
               className={cn(
@@ -88,7 +168,7 @@ export function ReviewForm({
               )}
             </div>
             <div>
-              <p className="text-sm font-medium">Semana {weekNumber}</p>
+              <p className="text-sm font-medium">Semana {viewWeek}</p>
               <div className="flex items-baseline gap-1.5">
                 <span
                   className={cn(
@@ -98,14 +178,74 @@ export function ReviewForm({
                 >
                   {weekScore}%
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  de ejecucion
-                </span>
+                <span className="text-xs text-muted-foreground">de ejecucion</span>
               </div>
             </div>
           </div>
+
+          {/* Daily grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {dailyGrid.map((day, i) => (
+              <div key={day.date} className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">{DAY_NAMES[i]}</span>
+                {day.score !== null ? (
+                  <div className="relative w-full flex flex-col items-center gap-0.5">
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white",
+                        scoreBg(day.score)
+                      )}
+                    >
+                      {day.score}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-accent/40 flex items-center justify-center">
+                    <span className="text-[10px] text-muted-foreground">—</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Compliance alerts */}
+      {showMotivational && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="pt-4 pb-4 flex gap-3">
+            <Heart className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-amber-500">
+                Esto es por tu bien
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Llevas dos bloques de 4 semanas por debajo del 75%. A veces reiniciar
+                con un compromiso renovado es la mejor decisión. No es rendirse —
+                es elegir volver a empezar con más claridad.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!showMotivational && showPromise && (
+        <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <CardContent className="pt-4 pb-4 flex gap-3">
+            <TrendingUp className="h-5 w-5 text-yellow-500 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-yellow-500">
+                Promesa de mejora
+              </p>
+              <p className="text-xs text-muted-foreground">
+                El promedio de tus primeras 4 semanas fue {avg1to4}% — por debajo del
+                75%. Las próximas 4 semanas son tu oportunidad de demostrar que puedes
+                hacerlo. ¿Cuál es tu compromiso?
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Formulario */}
       <Card className="card-hover">
@@ -127,10 +267,7 @@ export function ReviewForm({
           {needsAnalysis && (
             <>
               <div className="space-y-2">
-                <Label
-                  htmlFor="cause"
-                  className="text-sm font-medium text-red-400"
-                >
+                <Label htmlFor="cause" className="text-sm font-medium text-red-400">
                   ¿Por que no llegaste al 85%?
                 </Label>
                 <Textarea
@@ -164,14 +301,66 @@ export function ReviewForm({
             disabled={isPending}
             className="w-full h-11 rounded-xl font-medium"
           >
-            {isPending
-              ? "Guardando..."
-              : saved
-                ? "Guardado"
-                : "Guardar revision"}
+            {isPending ? "Guardando..." : saved ? "Guardado" : "Guardar revision"}
           </Button>
         </CardContent>
       </Card>
+
+      {/* Restart cycle */}
+      {showRestart && (
+        <Card className="border-dashed border-muted-foreground/30">
+          <CardContent className="pt-4 pb-4">
+            {!showRestartConfirm ? (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Volver a empezar</p>
+                  <p className="text-xs text-muted-foreground">
+                    Reinicia el ciclo desde el día 0
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5 border-muted-foreground/30"
+                  onClick={() => setShowRestartConfirm(true)}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reiniciar
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">
+                  ¿Seguro que quieres reiniciar?
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  El ciclo actual se cerrará y podrás configurar uno nuevo desde cero.
+                  Tu historial se conserva.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setShowRestartConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="flex-1"
+                    disabled={isRestarting}
+                    onClick={handleRestart}
+                  >
+                    {isRestarting ? "Cerrando..." : "Sí, reiniciar"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
