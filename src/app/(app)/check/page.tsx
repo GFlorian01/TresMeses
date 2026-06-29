@@ -16,18 +16,18 @@ export default async function CheckPage({
   const userRow = await getUserRow(user.id);
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
 
-  if (!userRow?.onboarding_complete) {
-    const activeCycle = await getActiveCycle(user.id);
-    if (!activeCycle) redirect("/onboarding");
-  }
+  const activeCycle = await getActiveCycle(user.id);
+  if (!userRow?.onboarding_complete && !activeCycle) redirect("/onboarding");
 
   const today = getTodayStr(tz);
+  const cycleStart = activeCycle?.start_date ?? today;
 
-  // Validar fecha del search param — no permitir fechas futuras
+  // No permitir fechas futuras ni anteriores al inicio del ciclo activo
   const params = await searchParams;
   const requestedDate = params.date;
   const dateStr =
-    requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= today
+    requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
+    requestedDate <= today && requestedDate >= cycleStart
       ? requestedDate
       : today;
 
@@ -65,6 +65,7 @@ export default async function CheckPage({
       initialHasTraining={entry.is_gym_day || entry.is_recovery_day}
       dateStr={dateStr}
       todayStr={today}
+      cycleStart={cycleStart}
     />
   );
 }

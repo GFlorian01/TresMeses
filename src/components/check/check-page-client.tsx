@@ -39,6 +39,7 @@ interface CheckPageClientProps {
   initialHasTraining: boolean;
   dateStr: string;
   todayStr: string;
+  cycleStart: string;
 }
 
 function offsetDate(dateStr: string, days: number): string {
@@ -59,6 +60,7 @@ export function CheckPageClient({
   initialHasTraining,
   dateStr,
   todayStr,
+  cycleStart,
 }: CheckPageClientProps) {
   // Estado central: arrays completos para derivar progreso sin callbacks
   const [habitChecks, setHabitChecks] = useState(initialHabitChecks);
@@ -70,6 +72,7 @@ export function CheckPageClient({
   const supabase = createClient();
 
   const isToday = dateStr === todayStr;
+  const isFirstDay = dateStr <= cycleStart;
 
   const goToDate = (newDate: string) => {
     if (newDate === todayStr) {
@@ -115,7 +118,8 @@ export function CheckPageClient({
               <div className="flex items-center gap-1 mt-0.5">
                 <button
                   onClick={() => goToDate(offsetDate(dateStr, -1))}
-                  className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  disabled={isFirstDay}
+                  className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Día anterior"
                 >
                   <ChevronLeft className="h-4 w-4" />
