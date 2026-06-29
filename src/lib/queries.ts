@@ -136,7 +136,21 @@ export async function getDailyEntry(userId: string, date: string) {
 
 export async function getOrCreateDailyEntry(userId: string, date: string) {
   const existing = await getDailyEntry(userId, date);
-  if (existing) return existing;
+
+  if (existing) {
+    // Backfill habit_checks for habits added after this entry was created
+    const habits = await getHabits(userId);
+    const covered = new Set(existing.habit_checks.map((hc: { habit_id: string }) => hc.habit_id));
+    const missing = habits.filter((h) => !covered.has(h.id));
+    if (missing.length > 0) {
+      const supabase = await createClient();
+      await supabase.from("habit_checks").insert(
+        missing.map((h) => ({ daily_entry_id: existing.id, habit_id: h.id, completed: false }))
+      );
+      return getDailyEntry(userId, date);
+    }
+    return existing;
+  }
 
   const supabase = await createClient();
 
