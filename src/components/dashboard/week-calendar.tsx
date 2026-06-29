@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { calculateDayScore } from "@/lib/dashboard-queries";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import type { DailyEntry, HabitCheck, MealEntry } from "@/types/database";
 
 type EntryWithRelations = DailyEntry & {
@@ -22,10 +22,14 @@ export function WeekCalendar({
   entries,
   weekStart,
   today,
+  viewWeek,
+  currentWeek,
 }: {
   entries: EntryWithRelations[];
   weekStart: string;
   today: string;
+  viewWeek: number;
+  currentWeek: number;
 }) {
   const start = new Date(weekStart);
 
@@ -42,12 +46,42 @@ export function WeekCalendar({
     return { dateStr, day: d.getDate(), score, isToday, isFuture, label: dayLabels[i], href };
   });
 
+  const isCurrentWeek = viewWeek === currentWeek;
+
   return (
     <Card className="card-hover">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-primary" />
-          Esta semana
+        <CardTitle className="text-sm font-semibold flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary" />
+            {isCurrentWeek ? "Esta semana" : `Semana ${viewWeek}`}
+          </div>
+          <div className="flex items-center gap-1">
+            <a
+              href={viewWeek > 1 ? `/dashboard?week=${viewWeek - 1}` : undefined}
+              className={cn(
+                "p-1 rounded-md transition-colors",
+                viewWeek > 1
+                  ? "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "text-muted-foreground/30 pointer-events-none"
+              )}
+              aria-label="Semana anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </a>
+            <a
+              href={viewWeek < currentWeek ? `/dashboard?week=${viewWeek + 1}` : "/dashboard"}
+              className={cn(
+                "p-1 rounded-md transition-colors",
+                viewWeek < currentWeek
+                  ? "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "text-muted-foreground/30 pointer-events-none"
+              )}
+              aria-label="Semana siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </a>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -8,6 +8,7 @@ import {
   getGymSessionsLast2Weeks,
   getCurrentWeekStart,
 } from "@/lib/dashboard-queries";
+import { getWeekStartForCycleWeek } from "@/lib/review-queries";
 import { DEFAULT_TIMEZONE, getTodayStr } from "@/lib/date-utils";
 import { ScoreCard } from "@/components/dashboard/score-card";
 import { StreakCard } from "@/components/dashboard/streak-card";
@@ -17,17 +18,34 @@ import { GymCounter } from "@/components/dashboard/gym-counter";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   const user = await getUser();
   if (!user) redirect("/login");
 
   const userRow = await getUserRow(user.id);
   const tz = userRow?.timezone ?? DEFAULT_TIMEZONE;
 
-  const weekStart = getCurrentWeekStart(tz);
-
   const cycleProgress = await getCycleProgress(user.id, tz);
   const cycleStart = cycleProgress?.cycle.start_date;
+  const currentWeek = cycleProgress?.currentWeek ?? 1;
+
+  const params = await searchParams;
+  const requestedWeek = params.week ? parseInt(params.week) : undefined;
+  const viewWeek = requestedWeek
+    ? Math.min(Math.max(1, requestedWeek), currentWeek)
+    : currentWeek;
+
+  // Compute weekStart: from cycle data if navigating past weeks, else calendar-based
+  const weekStart =
+    cycleStart && requestedWeek
+      ? getWeekStartForCycleWeek(cycleStart, viewWeek)
+      : getCurrentWeekStart(tz);
+
+  const today = getTodayStr(tz);
 
   const [weekEntries, streak, gymSessions] = await Promise.all([
     getWeekData(user.id, weekStart, cycleStart),
@@ -67,10 +85,16 @@ export default async function DashboardPage() {
         <div className="lg:grid lg:grid-cols-3 lg:gap-6 space-y-4 lg:space-y-0">
           <div className="lg:col-span-2 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <ScoreCard score={weekScore} label="Score semanal" />
+              <ScoreCard score={weekScore} label={`Semana ${viewWeek}`} />
               <StreakCard streak={streak} />
             </div>
-            <WeekCalendar entries={weekEntries} weekStart={weekStart} today={getTodayStr(tz)} />
+            <WeekCalendar
+              entries={weekEntries}
+              weekStart={weekStart}
+              today={today}
+              viewWeek={viewWeek}
+              currentWeek={currentWeek}
+            />
             <GymCounter sessions={gymSessions} />
             {/* Progreso en mobile va aquí */}
             <div className="lg:hidden">{cycleBlock}</div>
